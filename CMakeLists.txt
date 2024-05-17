@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(sherpa-onnx)
 
-set(SHERPA_ONNX_VERSION "1.9.10")
+set(SHERPA_ONNX_VERSION "1.9.25")
 
 # Disable warning about
 #
@@ -20,7 +20,15 @@ option(SHERPA_ONNX_ENABLE_JNI "Whether to build JNI internface" OFF)
 option(SHERPA_ONNX_ENABLE_C_API "Whether to build C API" ON)
 option(SHERPA_ONNX_ENABLE_WEBSOCKET "Whether to build webscoket server/client" ON)
 option(SHERPA_ONNX_ENABLE_GPU "Enable ONNX Runtime GPU support" OFF)
+option(SHERPA_ONNX_ENABLE_WASM "Whether to enable WASM" OFF)
+option(SHERPA_ONNX_ENABLE_WASM_TTS "Whether to enable WASM for TTS" OFF)
+option(SHERPA_ONNX_ENABLE_WASM_ASR "Whether to enable WASM for ASR" OFF)
+option(SHERPA_ONNX_ENABLE_WASM_KWS "Whether to enable WASM for KWS" OFF)
+option(SHERPA_ONNX_ENABLE_WASM_NODEJS "Whether to enable WASM for NodeJS" OFF)
+option(SHERPA_ONNX_ENABLE_BINARY "Whether to build binaries" ON)
+option(SHERPA_ONNX_ENABLE_TTS "Whether to build TTS related code" ON)
 option(SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY "True to link libstdc++ statically. Used only when BUILD_SHARED_LIBS is OFF on Linux" ON)
+option(SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE "True to use pre-installed onnxruntime if available" ON)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
@@ -84,6 +92,8 @@ if(NOT BUILD_SHARED_LIBS AND MSVC)
           $<$<CONFIG:>:/MT> #---------|
           $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
           $<$<CONFIG:Release>:/MT> #--|
+          $<$<CONFIG:RelWithDebInfo>:/MT>
+          $<$<CONFIG:MinSizeRel>:/MT>
       )
   endif()
 endif()
@@ -99,6 +109,53 @@ message(STATUS "SHERPA_ONNX_ENABLE_JNI ${SHERPA_ONNX_ENABLE_JNI}")
 message(STATUS "SHERPA_ONNX_ENABLE_C_API ${SHERPA_ONNX_ENABLE_C_API}")
 message(STATUS "SHERPA_ONNX_ENABLE_WEBSOCKET ${SHERPA_ONNX_ENABLE_WEBSOCKET}")
 message(STATUS "SHERPA_ONNX_ENABLE_GPU ${SHERPA_ONNX_ENABLE_GPU}")
+message(STATUS "SHERPA_ONNX_ENABLE_WASM ${SHERPA_ONNX_ENABLE_WASM}")
+message(STATUS "SHERPA_ONNX_ENABLE_WASM_TTS ${SHERPA_ONNX_ENABLE_WASM_TTS}")
+message(STATUS "SHERPA_ONNX_ENABLE_WASM_ASR ${SHERPA_ONNX_ENABLE_WASM_ASR}")
+message(STATUS "SHERPA_ONNX_ENABLE_WASM_KWS ${SHERPA_ONNX_ENABLE_WASM_KWS}")
+message(STATUS "SHERPA_ONNX_ENABLE_WASM_NODEJS ${SHERPA_ONNX_ENABLE_WASM_NODEJS}")
+message(STATUS "SHERPA_ONNX_ENABLE_BINARY ${SHERPA_ONNX_ENABLE_BINARY}")
+message(STATUS "SHERPA_ONNX_ENABLE_TTS ${SHERPA_ONNX_ENABLE_TTS}")
+message(STATUS "SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY ${SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY}")
+message(STATUS "SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE ${SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE}")
+
+if(SHERPA_ONNX_ENABLE_TTS)
+  message(STATUS "TTS is enabled")
+  add_definitions(-DSHERPA_ONNX_ENABLE_TTS=1)
+else()
+  message(WARNING "TTS is disabled")
+  add_definitions(-DSHERPA_ONNX_ENABLE_TTS=0)
+endif()
+
+if(SHERPA_ONNX_ENABLE_WASM_TTS)
+  if(NOT SHERPA_ONNX_ENABLE_TTS)
+    message(FATAL_ERROR "Please set SHERPA_ONNX_ENABLE_TTS to ON if you want to build wasm TTS")
+  endif()
+
+  if(NOT SHERPA_ONNX_ENABLE_WASM)
+    message(FATAL_ERROR "Please set SHERPA_ONNX_ENABLE_WASM to ON if you enable WASM for TTS")
+  endif()
+endif()
+
+if(SHERPA_ONNX_ENABLE_WASM_ASR)
+  if(NOT SHERPA_ONNX_ENABLE_WASM)
+    message(FATAL_ERROR "Please set SHERPA_ONNX_ENABLE_WASM to ON if you enable WASM for ASR")
+  endif()
+endif()
+
+if(SHERPA_ONNX_ENABLE_WASM_NODEJS)
+  if(NOT SHERPA_ONNX_ENABLE_WASM)
+    message(FATAL_ERROR "Please set SHERPA_ONNX_ENABLE_WASM to ON if you enable WASM for NodeJS")
+  endif()
+endif()
+
+if(SHERPA_ONNX_ENABLE_WASM)
+  add_definitions(-DSHERPA_ONNX_ENABLE_WASM=1)
+endif()
+
+if(SHERPA_ONNX_ENABLE_WASM_KWS)
+  add_definitions(-DSHERPA_ONNX_ENABLE_WASM_KWS=1)
+endif()
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14 CACHE STRING "The C++ version to be used.")
@@ -106,17 +163,17 @@ endif()
 set(CMAKE_CXX_EXTENSIONS OFF)
 message(STATUS "C++ Standard version: ${CMAKE_CXX_STANDARD}")
 
-
 include(CheckIncludeFileCXX)
 
-if(UNIX AND NOT APPLE)
+if(UNIX AND NOT APPLE AND NOT SHERPA_ONNX_ENABLE_WASM AND NOT CMAKE_SYSTEM_NAME STREQUAL Android)
   check_include_file_cxx(alsa/asoundlib.h SHERPA_ONNX_HAS_ALSA)
   if(SHERPA_ONNX_HAS_ALSA)
+    message(STATUS "With Alsa")
     add_definitions(-DSHERPA_ONNX_ENABLE_ALSA=1)
   else()
     message(WARNING "\
 Could not find alsa/asoundlib.h !
-We won't build sherpa-ncnn-alsa
+We won't build sherpa-onnx-alsa
 To fix that, please do:
   (1) sudo apt-get install alsa-utils libasound2-dev
   (2) rm -rf build
@@ -160,6 +217,11 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
+if(SHERPA_ONNX_ENABLE_WASM)
+  # Enable it for debugging in case there is something wrong.
+  # string(APPEND CMAKE_CXX_FLAGS " -g4 -s ASSERTIONS=2 -s SAFE_HEAP=1 -s STACK_OVERFLOW_CHECK=1 ")
+endif()
+
 if(NOT BUILD_SHARED_LIBS AND CMAKE_SYSTEM_NAME STREQUAL Linux)
   if(SHERPA_ONNX_LINK_LIBSTDCPP_STATICALLY)
     message(STATUS "Link libstdc++ statically")
@@ -193,16 +255,25 @@ if(SHERPA_ONNX_ENABLE_WEBSOCKET)
   include(asio)
 endif()
 
-include(espeak-ng-for-piper)
-set(ESPEAK_NG_DIR ${espeak_ng_SOURCE_DIR})
-message(STATUS "ESPEAK_NG_DIR: ${ESPEAK_NG_DIR}")
-include(piper-phonemize)
+if(SHERPA_ONNX_ENABLE_TTS)
+  include(espeak-ng-for-piper)
+  set(ESPEAK_NG_DIR ${espeak_ng_SOURCE_DIR})
+  message(STATUS "ESPEAK_NG_DIR: ${ESPEAK_NG_DIR}")
+  include(piper-phonemize)
+  include(cppjieba) # For Chinese TTS. It is a header-only C++ library
+endif()
 
 add_subdirectory(sherpa-onnx)
 
-if(SHERPA_ONNX_ENABLE_C_API)
+if(SHERPA_ONNX_ENABLE_C_API AND SHERPA_ONNX_ENABLE_BINARY)
+  set(SHERPA_ONNX_PKG_WITH_CARGS "-lcargs")
   add_subdirectory(c-api-examples)
 endif()
+
+if(SHERPA_ONNX_ENABLE_WASM)
+  add_subdirectory(wasm)
+endif()
+
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 if(NOT BUILD_SHARED_LIBS)
@@ -216,7 +287,12 @@ if(NOT BUILD_SHARED_LIBS)
 endif()
 
 # See https://people.freedesktop.org/~dbn/pkg-config-guide.html
-configure_file(cmake/sherpa-onnx.pc.in ${PROJECT_BINARY_DIR}/sherpa-onnx.pc @ONLY)
+if(SHERPA_ONNX_ENABLE_TTS)
+  configure_file(cmake/sherpa-onnx.pc.in ${PROJECT_BINARY_DIR}/sherpa-onnx.pc @ONLY)
+else()
+  configure_file(cmake/sherpa-onnx-no-tts.pc.in ${PROJECT_BINARY_DIR}/sherpa-onnx.pc @ONLY)
+endif()
+
 install(
   FILES
     ${PROJECT_BINARY_DIR}/sherpa-onnx.pc

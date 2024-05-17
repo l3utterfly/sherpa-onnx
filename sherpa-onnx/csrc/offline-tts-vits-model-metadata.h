@@ -20,6 +20,11 @@ struct OfflineTtsVitsModelMetaData {
 
   bool is_piper = false;
   bool is_coqui = false;
+  bool is_icefall = false;
+
+  // for Chinese TTS models from
+  // https://github.com/Plachtaa/VITS-fast-fine-tuning
+  int32_t jieba = 0;
 
   // the following options are for models from coqui-ai/TTS
   int32_t blank_id = 0;

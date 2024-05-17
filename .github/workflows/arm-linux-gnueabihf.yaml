@@ -10,6 +10,7 @@ on:
       - 'CMakeLists.txt'
       - 'cmake/**'
       - 'sherpa-onnx/csrc/*'
+      - 'sherpa-onnx/c-api/*'
       - 'toolchains/arm-linux-gnueabihf.toolchain.cmake'
     tags:
       - '*'
@@ -21,6 +22,7 @@ on:
       - 'CMakeLists.txt'
       - 'cmake/**'
       - 'sherpa-onnx/csrc/*'
+      - 'sherpa-onnx/c-api/*'
       - 'toolchains/arm-linux-gnueabihf.toolchain.cmake'
 
   workflow_dispatch:
@@ -51,7 +53,7 @@ jobs:
 
       - name: cache-qemu
         id: cache-qemu
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: qemu-install
           key: qemu-arm-install-20220907
@@ -80,7 +82,7 @@ jobs:
 
       - name: cache-toolchain
         id: cache-toolchain
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: toolchain
           key: gcc-arm-9.2-2019.12-x86_64-arm-none-linux-gnueabihf
@@ -171,26 +173,59 @@ jobs:
             rm -v $dst/lib/libasound.so
             rm -v $dst/lib/libonnxruntime.so
             rm -v $dst/lib/libsherpa-onnx-fst.so
+            rm -v $dst/lib/libsherpa-onnx-fstfar.so
           fi
 
           tree $dst
 
           tar cjvf ${dst}.tar.bz2 $dst
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: matrix.lib_type == 'shared'
         with:
           name: sherpa-onnx-linux-arm-gnueabihf-shared
           path: sherpa-onnx-*linux-arm-gnueabihf-shared.tar.bz2
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: matrix.lib_type == 'static'
         with:
           name: sherpa-onnx-linux-arm-gnueabihf-static
           path: sherpa-onnx-*linux-arm-gnueabihf-static.tar.bz2
 
+      # https://huggingface.co/docs/hub/spaces-github-actions
+      - name: Publish to huggingface
+        if: (github.repository_owner == 'csukuangfj' || github.repository_owner == 'k2-fsa') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        uses: nick-fields/retry@v3
+        with:
+          max_attempts: 20
+          timeout_seconds: 200
+          shell: bash
+          command: |
+            git config --global user.email "csukuangfj@gmail.com"
+            git config --global user.name "Fangjun Kuang"
+
+            rm -rf huggingface
+            GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/csukuangfj/sherpa-onnx-libs huggingface
+
+            cd huggingface
+            git lfs pull
+            mkdir -p arm32
+
+            cp -v ../sherpa-onnx-*.tar.bz2 ./arm32
+
+            git status
+            git lfs track "*.bz2"
+
+            git add .
+
+            git commit -m "upload sherpa-onnx-${SHERPA_ONNX_VERSION}"
+
+            git push https://csukuangfj:$HF_TOKEN@huggingface.co/csukuangfj/sherpa-onnx-libs main
+
       - name: Release pre-compiled binaries and libs for arm linux gnueabihf ${{ matrix.lib_type }}
-        if: github.repository_owner == 'csukuangfj' || github.repository_owner == 'k2-fsa' && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        if: (github.repository_owner == 'csukuangfj' || github.repository_owner == 'k2-fsa') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         uses: svenstaro/upload-release-action@v2
         with:
           file_glob: true

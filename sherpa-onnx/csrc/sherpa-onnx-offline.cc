@@ -111,8 +111,8 @@ for a list of pre-trained models to download.
   fprintf(stderr, "Creating recognizer ...\n");
   sherpa_onnx::OfflineRecognizer recognizer(config);
 
-  const auto begin = std::chrono::steady_clock::now();
   fprintf(stderr, "Started\n");
+  const auto begin = std::chrono::steady_clock::now();
 
   std::vector<std::unique_ptr<sherpa_onnx::OfflineStream>> ss;
   std::vector<sherpa_onnx::OfflineStream *> ss_pointers;
@@ -124,7 +124,7 @@ for a list of pre-trained models to download.
     const std::vector<float> samples =
         sherpa_onnx::ReadWave(wav_filename, &sampling_rate, &is_ok);
     if (!is_ok) {
-      fprintf(stderr, "Failed to read %s\n", wav_filename.c_str());
+      fprintf(stderr, "Failed to read '%s'\n", wav_filename.c_str());
       return -1;
     }
     duration += samples.size() / static_cast<float>(sampling_rate);

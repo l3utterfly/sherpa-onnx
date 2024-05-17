@@ -52,53 +52,53 @@ static void ComputeMeanAndInvStd(const float *p, int32_t num_rows,
   }
 }
 
-void OfflineFeatureExtractorConfig::Register(ParseOptions *po) {
-  po->Register("sample-rate", &sampling_rate,
-               "Sampling rate of the input waveform. "
-               "Note: You can have a different "
-               "sample rate for the input waveform. We will do resampling "
-               "inside the feature extractor");
-
-  po->Register("feat-dim", &feature_dim,
-               "Feature dimension. Must match the one expected by the model.");
-}
-
-std::string OfflineFeatureExtractorConfig::ToString() const {
-  std::ostringstream os;
-
-  os << "OfflineFeatureExtractorConfig(";
-  os << "sampling_rate=" << sampling_rate << ", ";
-  os << "feature_dim=" << feature_dim << ")";
-
-  return os.str();
-}
-
 class OfflineStream::Impl {
  public:
-  explicit Impl(const OfflineFeatureExtractorConfig &config,
+  explicit Impl(const FeatureExtractorConfig &config,
                 ContextGraphPtr context_graph)
       : config_(config), context_graph_(context_graph) {
-    opts_.frame_opts.dither = 0;
-    opts_.frame_opts.snip_edges = false;
+    opts_.frame_opts.dither = config.dither;
+    opts_.frame_opts.snip_edges = config.snip_edges;
     opts_.frame_opts.samp_freq = config.sampling_rate;
+    opts_.frame_opts.frame_shift_ms = config.frame_shift_ms;
+    opts_.frame_opts.frame_length_ms = config.frame_length_ms;
+    opts_.frame_opts.remove_dc_offset = config.remove_dc_offset;
+    opts_.frame_opts.window_type = config.window_type;
+
     opts_.mel_opts.num_bins = config.feature_dim;
 
-    // Please see
-    // https://github.com/lhotse-speech/lhotse/blob/master/lhotse/features/fbank.py#L27
-    // and
-    // https://github.com/k2-fsa/sherpa-onnx/issues/514
-    opts_.mel_opts.high_freq = -400;
+    opts_.mel_opts.high_freq = config.high_freq;
+    opts_.mel_opts.low_freq = config.low_freq;
+
+    opts_.mel_opts.is_librosa = config.is_librosa;
 
     fbank_ = std::make_unique<knf::OnlineFbank>(opts_);
   }
 
-  Impl(WhisperTag /*tag*/, ContextGraphPtr context_graph)
-      : context_graph_(context_graph) {
+  explicit Impl(WhisperTag /*tag*/) {
     config_.normalize_samples = true;
     opts_.frame_opts.samp_freq = 16000;
-    opts_.mel_opts.num_bins = 80;
+    opts_.mel_opts.num_bins = 80;  // not used
     whisper_fbank_ =
         std::make_unique<knf::OnlineWhisperFbank>(opts_.frame_opts);
+  }
+
+  explicit Impl(CEDTag /*tag*/) {
+    // see
+    // https://github.com/RicherMans/CED/blob/main/onnx_inference_with_kaldi.py
+
+    opts_.frame_opts.frame_length_ms = 32;
+    opts_.frame_opts.dither = 0;
+    opts_.frame_opts.preemph_coeff = 0;
+    opts_.frame_opts.remove_dc_offset = false;
+    opts_.frame_opts.window_type = "hann";
+    opts_.frame_opts.snip_edges = false;
+
+    opts_.frame_opts.samp_freq = 16000;  // fixed to 16000
+    opts_.mel_opts.num_bins = 64;
+    opts_.mel_opts.high_freq = 8000;
+
+    fbank_ = std::make_unique<knf::OnlineFbank>(opts_);
   }
 
   void AcceptWaveform(int32_t sampling_rate, const float *waveform, int32_t n) {
@@ -220,7 +220,7 @@ class OfflineStream::Impl {
   }
 
  private:
-  OfflineFeatureExtractorConfig config_;
+  FeatureExtractorConfig config_;
   std::unique_ptr<knf::OnlineFbank> fbank_;
   std::unique_ptr<knf::OnlineWhisperFbank> whisper_fbank_;
   knf::FbankOptions opts_;
@@ -228,14 +228,14 @@ class OfflineStream::Impl {
   ContextGraphPtr context_graph_;
 };
 
-OfflineStream::OfflineStream(
-    const OfflineFeatureExtractorConfig &config /*= {}*/,
-    ContextGraphPtr context_graph /*= nullptr*/)
+OfflineStream::OfflineStream(const FeatureExtractorConfig &config /*= {}*/,
+                             ContextGraphPtr context_graph /*= nullptr*/)
     : impl_(std::make_unique<Impl>(config, context_graph)) {}
 
-OfflineStream::OfflineStream(WhisperTag tag,
-                             ContextGraphPtr context_graph /*= nullptr*/)
-    : impl_(std::make_unique<Impl>(tag, context_graph)) {}
+OfflineStream::OfflineStream(WhisperTag tag)
+    : impl_(std::make_unique<Impl>(tag)) {}
+
+OfflineStream::OfflineStream(CEDTag tag) : impl_(std::make_unique<Impl>(tag)) {}
 
 OfflineStream::~OfflineStream() = default;
 

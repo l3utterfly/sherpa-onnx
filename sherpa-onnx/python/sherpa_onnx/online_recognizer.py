@@ -12,10 +12,13 @@ from _sherpa_onnx import (
 from _sherpa_onnx import OnlineRecognizer as _Recognizer
 from _sherpa_onnx import (
     OnlineRecognizerConfig,
+    OnlineRecognizerResult,
     OnlineStream,
     OnlineTransducerModelConfig,
     OnlineWenetCtcModelConfig,
+    OnlineNeMoCtcModelConfig,
     OnlineZipformer2CtcModelConfig,
+    OnlineCtcFstDecoderConfig,
 )
 
 
@@ -41,6 +44,9 @@ class OnlineRecognizer(object):
         num_threads: int = 2,
         sample_rate: float = 16000,
         feature_dim: int = 80,
+        low_freq: float = 20.0,
+        high_freq: float = -400.0,
+        dither: float = 0.0,
         enable_endpoint_detection: bool = False,
         rule1_min_trailing_silence: float = 2.4,
         rule2_min_trailing_silence: float = 1.2,
@@ -54,6 +60,8 @@ class OnlineRecognizer(object):
         model_type: str = "",
         lm: str = "",
         lm_scale: float = 0.1,
+        temperature_scale: float = 2.0,
+        debug: bool = False,
     ):
         """
         Please refer to
@@ -80,6 +88,16 @@ class OnlineRecognizer(object):
             Sample rate of the training data used to train the model.
           feature_dim:
             Dimension of the feature used to train the model.
+          low_freq:
+            Low cutoff frequency for mel bins in feature extraction.
+          high_freq:
+            High cutoff frequency for mel bins in feature extraction
+            (if <= 0, offset from Nyquist)
+          dither:
+            Dithering constant (0.0 means no dither).
+            By default the audio samples are in range [-1,+1],
+            so dithering constant 0.00003 is a good value,
+            equivalent to the default 1.0 from kaldi
           enable_endpoint_detection:
             True to enable endpoint detection. False to disable endpoint
             detection.
@@ -109,6 +127,10 @@ class OnlineRecognizer(object):
           hotwords_score:
             The hotword score of each token for biasing word/phrase. Used only if
             hotwords_file is given with modified_beam_search as decoding method.
+          temperature_scale:
+            Temperature scaling for output symbol confidence estiamation.
+            It affects only confidence values, the decoding uses the original
+            logits without temperature.
           provider:
             onnxruntime execution providers. Valid values are: cpu, cuda, coreml.
           model_type:
@@ -135,11 +157,15 @@ class OnlineRecognizer(object):
             num_threads=num_threads,
             provider=provider,
             model_type=model_type,
+            debug=debug,
         )
 
         feat_config = FeatureExtractorConfig(
             sampling_rate=sample_rate,
             feature_dim=feature_dim,
+            low_freq=low_freq,
+            high_freq=high_freq,
+            dither=dither,
         )
 
         endpoint_config = EndpointConfig(
@@ -176,6 +202,7 @@ class OnlineRecognizer(object):
             hotwords_score=hotwords_score,
             hotwords_file=hotwords_file,
             blank_penalty=blank_penalty,
+            temperature_scale=temperature_scale,
         )
 
         self.recognizer = _Recognizer(recognizer_config)
@@ -197,6 +224,7 @@ class OnlineRecognizer(object):
         rule3_min_utterance_length: float = 20.0,
         decoding_method: str = "greedy_search",
         provider: str = "cpu",
+        debug: bool = False,
     ):
         """
         Please refer to
@@ -260,6 +288,7 @@ class OnlineRecognizer(object):
             num_threads=num_threads,
             provider=provider,
             model_type="paraformer",
+            debug=debug,
         )
 
         feat_config = FeatureExtractorConfig(
@@ -298,7 +327,10 @@ class OnlineRecognizer(object):
         rule2_min_trailing_silence: float = 1.2,
         rule3_min_utterance_length: float = 20.0,
         decoding_method: str = "greedy_search",
+        ctc_graph: str = "",
+        ctc_max_active: int = 3000,
         provider: str = "cpu",
+        debug: bool = False,
     ):
         """
         Please refer to
@@ -339,6 +371,12 @@ class OnlineRecognizer(object):
             is detected.
           decoding_method:
             The only valid value is greedy_search.
+          ctc_graph:
+            If not empty, decoding_method is ignored. It contains the path to
+            H.fst, HL.fst, or HLG.fst
+          ctc_max_active:
+            Used only when ctc_graph is not empty. It specifies the maximum
+            active paths at a time.
           provider:
             onnxruntime execution providers. Valid values are: cpu, cuda, coreml.
         """
@@ -355,6 +393,113 @@ class OnlineRecognizer(object):
             tokens=tokens,
             num_threads=num_threads,
             provider=provider,
+            debug=debug,
+        )
+
+        feat_config = FeatureExtractorConfig(
+            sampling_rate=sample_rate,
+            feature_dim=feature_dim,
+        )
+
+        endpoint_config = EndpointConfig(
+            rule1_min_trailing_silence=rule1_min_trailing_silence,
+            rule2_min_trailing_silence=rule2_min_trailing_silence,
+            rule3_min_utterance_length=rule3_min_utterance_length,
+        )
+
+        ctc_fst_decoder_config = OnlineCtcFstDecoderConfig(
+            graph=ctc_graph,
+            max_active=ctc_max_active,
+        )
+
+        recognizer_config = OnlineRecognizerConfig(
+            feat_config=feat_config,
+            model_config=model_config,
+            endpoint_config=endpoint_config,
+            ctc_fst_decoder_config=ctc_fst_decoder_config,
+            enable_endpoint=enable_endpoint_detection,
+            decoding_method=decoding_method,
+        )
+
+        self.recognizer = _Recognizer(recognizer_config)
+        self.config = recognizer_config
+        return self
+
+    @classmethod
+    def from_nemo_ctc(
+        cls,
+        tokens: str,
+        model: str,
+        num_threads: int = 2,
+        sample_rate: float = 16000,
+        feature_dim: int = 80,
+        enable_endpoint_detection: bool = False,
+        rule1_min_trailing_silence: float = 2.4,
+        rule2_min_trailing_silence: float = 1.2,
+        rule3_min_utterance_length: float = 20.0,
+        decoding_method: str = "greedy_search",
+        provider: str = "cpu",
+        debug: bool = False,
+    ):
+        """
+        Please refer to
+        `<https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models>`_
+        to download pre-trained models.
+
+        Args:
+          tokens:
+            Path to ``tokens.txt``. Each line in ``tokens.txt`` contains two
+            columns::
+
+                symbol integer_id
+
+          model:
+            Path to ``model.onnx``.
+          num_threads:
+            Number of threads for neural network computation.
+          sample_rate:
+            Sample rate of the training data used to train the model.
+          feature_dim:
+            Dimension of the feature used to train the model.
+          enable_endpoint_detection:
+            True to enable endpoint detection. False to disable endpoint
+            detection.
+          rule1_min_trailing_silence:
+            Used only when enable_endpoint_detection is True. If the duration
+            of trailing silence in seconds is larger than this value, we assume
+            an endpoint is detected.
+          rule2_min_trailing_silence:
+            Used only when enable_endpoint_detection is True. If we have decoded
+            something that is nonsilence and if the duration of trailing silence
+            in seconds is larger than this value, we assume an endpoint is
+            detected.
+          rule3_min_utterance_length:
+            Used only when enable_endpoint_detection is True. If the utterance
+            length in seconds is larger than this value, we assume an endpoint
+            is detected.
+          decoding_method:
+            The only valid value is greedy_search.
+          provider:
+            onnxruntime execution providers. Valid values are: cpu, cuda, coreml.
+          debug:
+            True to show meta data in the model.
+        """
+        self = cls.__new__(cls)
+        _assert_file_exists(tokens)
+        _assert_file_exists(model)
+
+        assert num_threads > 0, num_threads
+
+        nemo_ctc_config = OnlineNeMoCtcModelConfig(
+            model=model,
+        )
+
+        model_config = OnlineModelConfig(
+            nemo_ctc=nemo_ctc_config,
+            tokens=tokens,
+            num_threads=num_threads,
+            provider=provider,
+            debug=debug,
         )
 
         feat_config = FeatureExtractorConfig(
@@ -396,6 +541,7 @@ class OnlineRecognizer(object):
         rule3_min_utterance_length: float = 20.0,
         decoding_method: str = "greedy_search",
         provider: str = "cpu",
+        debug: bool = False,
     ):
         """
         Please refer to
@@ -460,6 +606,7 @@ class OnlineRecognizer(object):
             tokens=tokens,
             num_threads=num_threads,
             provider=provider,
+            debug=debug,
         )
 
         feat_config = FeatureExtractorConfig(
@@ -500,14 +647,32 @@ class OnlineRecognizer(object):
     def is_ready(self, s: OnlineStream) -> bool:
         return self.recognizer.is_ready(s)
 
+    def get_result_all(self, s: OnlineStream) -> OnlineRecognizerResult:
+        return self.recognizer.get_result(s)
+
     def get_result(self, s: OnlineStream) -> str:
         return self.recognizer.get_result(s).text.strip()
+
+    def get_result_as_json_string(self, s: OnlineStream) -> str:
+        return self.recognizer.get_result(s).as_json_string()
 
     def tokens(self, s: OnlineStream) -> List[str]:
         return self.recognizer.get_result(s).tokens
 
     def timestamps(self, s: OnlineStream) -> List[float]:
         return self.recognizer.get_result(s).timestamps
+
+    def start_time(self, s: OnlineStream) -> float:
+        return self.recognizer.get_result(s).start_time
+
+    def ys_probs(self, s: OnlineStream) -> List[float]:
+        return self.recognizer.get_result(s).ys_probs
+
+    def lm_probs(self, s: OnlineStream) -> List[float]:
+        return self.recognizer.get_result(s).lm_probs
+
+    def context_scores(self, s: OnlineStream) -> List[float]:
+        return self.recognizer.get_result(s).context_scores
 
     def is_endpoint(self, s: OnlineStream) -> bool:
         return self.recognizer.is_endpoint(s)

@@ -1,4 +1,4 @@
-package com.k2fsa.sherpa.onnx
+package com.k2fsa.sherpa.onnx.vad.asr
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -8,11 +8,17 @@ import android.media.MediaRecorder
 import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.k2fsa.sherpa.onnx.OfflineRecognizer
+import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
+import com.k2fsa.sherpa.onnx.R
+import com.k2fsa.sherpa.onnx.Vad
+import com.k2fsa.sherpa.onnx.getFeatureConfig
+import com.k2fsa.sherpa.onnx.getOfflineModelConfig
+import com.k2fsa.sherpa.onnx.getVadModelConfig
 import kotlin.concurrent.thread
 
 
@@ -40,7 +46,7 @@ class MainActivity : AppCompatActivity() {
     private val permissions: Array<String> = arrayOf(Manifest.permission.RECORD_AUDIO)
 
     // Non-streaming ASR
-    private lateinit var offlineRecognizer: SherpaOnnxOffline
+    private lateinit var offlineRecognizer: OfflineRecognizer
 
     private var idx: Int = 0
     private var lastText: String = ""
@@ -122,7 +128,7 @@ class MainActivity : AppCompatActivity() {
 
     private  fun initVadModel() {
         val type = 0
-        println("Select VAD model type ${type}")
+        Log.i(TAG, "Select VAD model type ${type}")
         val config = getVadModelConfig(type)
 
         vad = Vad(
@@ -193,21 +199,26 @@ class MainActivity : AppCompatActivity() {
         // Please change getOfflineModelConfig() to add new models
         // See https://k2-fsa.github.io/sherpa/onnx/pretrained_models/index.html
         // for a list of available models
-        val secondType = 0
-        println("Select model type ${secondType} for the second pass")
+        val asrModelType = 0
+        Log.i(TAG, "Select model type ${asrModelType} for ASR")
 
         val config = OfflineRecognizerConfig(
             featConfig = getFeatureConfig(sampleRate = sampleRateInHz, featureDim = 80),
-            modelConfig = getOfflineModelConfig(type = secondType)!!,
+            modelConfig = getOfflineModelConfig(type = asrModelType)!!,
         )
 
-        offlineRecognizer = SherpaOnnxOffline(
+        offlineRecognizer = OfflineRecognizer(
             assetManager = application.assets,
             config = config,
         )
     }
 
     private fun runSecondPass(samples: FloatArray): String {
-        return offlineRecognizer.decode(samples, sampleRateInHz)
+        val stream = offlineRecognizer.createStream()
+        stream.acceptWaveform(samples, sampleRateInHz)
+        offlineRecognizer.decode(stream)
+        val result = offlineRecognizer.getResult(stream)
+        stream.release()
+        return result.text
     }
 }

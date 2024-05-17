@@ -18,56 +18,52 @@
 
 namespace sherpa_onnx {
 
+/// Helper for `OnlineRecognizerResult::AsJsonString()`
+template <typename T>
+std::string VecToString(const std::vector<T> &vec, int32_t precision = 6) {
+  std::ostringstream oss;
+  oss << std::fixed << std::setprecision(precision);
+  oss << "[ ";
+  std::string sep = "";
+  for (const auto &item : vec) {
+    oss << sep << item;
+    sep = ", ";
+  }
+  oss << " ]";
+  return oss.str();
+}
+
+/// Helper for `OnlineRecognizerResult::AsJsonString()`
+template <>  // explicit specialization for T = std::string
+std::string VecToString<std::string>(const std::vector<std::string> &vec,
+                                     int32_t) {  // ignore 2nd arg
+  std::ostringstream oss;
+  oss << "[ ";
+  std::string sep = "";
+  for (const auto &item : vec) {
+    oss << sep << "\"" << item << "\"";
+    sep = ", ";
+  }
+  oss << " ]";
+  return oss.str();
+}
+
 std::string OnlineRecognizerResult::AsJsonString() const {
   std::ostringstream os;
-  os << "{";
-  os << "\"is_final\":" << (is_final ? "true" : "false") << ", ";
-  os << "\"segment\":" << segment << ", ";
-  os << "\"start_time\":" << std::fixed << std::setprecision(2) << start_time
+  os << "{ ";
+  os << "\"text\": "
+     << "\"" << text << "\""
      << ", ";
-
-  os << "\"text\""
-     << ": ";
-  os << "\"" << text << "\""
+  os << "\"tokens\": " << VecToString(tokens) << ", ";
+  os << "\"timestamps\": " << VecToString(timestamps, 2) << ", ";
+  os << "\"ys_probs\": " << VecToString(ys_probs, 6) << ", ";
+  os << "\"lm_probs\": " << VecToString(lm_probs, 6) << ", ";
+  os << "\"context_scores\": " << VecToString(context_scores, 6) << ", ";
+  os << "\"segment\": " << segment << ", ";
+  os << "\"start_time\": " << std::fixed << std::setprecision(2) << start_time
      << ", ";
-
-  os << "\""
-     << "timestamps"
-     << "\""
-     << ": ";
-  os << "[";
-
-  std::string sep = "";
-  for (auto t : timestamps) {
-    os << sep << std::fixed << std::setprecision(2) << t;
-    sep = ", ";
-  }
-  os << "], ";
-
-  os << "\""
-     << "tokens"
-     << "\""
-     << ":";
-  os << "[";
-
-  sep = "";
-  auto oldFlags = os.flags();
-  for (const auto &t : tokens) {
-    if (t.size() == 1 && static_cast<uint8_t>(t[0]) > 0x7f) {
-      const uint8_t *p = reinterpret_cast<const uint8_t *>(t.c_str());
-      os << sep << "\""
-         << "<0x" << std::hex << std::uppercase << static_cast<uint32_t>(p[0])
-         << ">"
-         << "\"";
-      os.flags(oldFlags);
-    } else {
-      os << sep << "\"" << t << "\"";
-    }
-    sep = ", ";
-  }
-  os << "]";
+  os << "\"is_final\": " << (is_final ? "true" : "false");
   os << "}";
-
   return os.str();
 }
 
@@ -76,6 +72,7 @@ void OnlineRecognizerConfig::Register(ParseOptions *po) {
   model_config.Register(po);
   endpoint_config.Register(po);
   lm_config.Register(po);
+  ctc_fst_decoder_config.Register(po);
 
   po->Register("enable-endpoint", &enable_endpoint,
                "True to enable endpoint detection. False to disable it.");
@@ -99,6 +96,8 @@ void OnlineRecognizerConfig::Register(ParseOptions *po) {
   po->Register("decoding-method", &decoding_method,
                "decoding method,"
                "now support greedy_search and modified_beam_search.");
+  po->Register("temperature-scale", &temperature_scale,
+               "Temperature scale for confidence computation in decoding.");
 }
 
 bool OnlineRecognizerConfig::Validate() const {
@@ -122,6 +121,12 @@ bool OnlineRecognizerConfig::Validate() const {
     return false;
   }
 
+  if (!ctc_fst_decoder_config.graph.empty() &&
+      !ctc_fst_decoder_config.Validate()) {
+    SHERPA_ONNX_LOGE("Errors in ctc_fst_decoder_config");
+    return false;
+  }
+
   return model_config.Validate();
 }
 
@@ -133,12 +138,14 @@ std::string OnlineRecognizerConfig::ToString() const {
   os << "model_config=" << model_config.ToString() << ", ";
   os << "lm_config=" << lm_config.ToString() << ", ";
   os << "endpoint_config=" << endpoint_config.ToString() << ", ";
+  os << "ctc_fst_decoder_config=" << ctc_fst_decoder_config.ToString() << ", ";
   os << "enable_endpoint=" << (enable_endpoint ? "True" : "False") << ", ";
   os << "max_active_paths=" << max_active_paths << ", ";
   os << "hotwords_score=" << hotwords_score << ", ";
   os << "hotwords_file=\"" << hotwords_file << "\", ";
   os << "decoding_method=\"" << decoding_method << "\", ";
-  os << "blank_penalty=" << blank_penalty << ")";
+  os << "blank_penalty=" << blank_penalty << ", ";
+  os << "temperature_scale=" << temperature_scale << ")";
 
   return os.str();
 }
@@ -165,6 +172,12 @@ std::unique_ptr<OnlineStream> OnlineRecognizer::CreateStream(
 
 bool OnlineRecognizer::IsReady(OnlineStream *s) const {
   return impl_->IsReady(s);
+}
+
+void OnlineRecognizer::WarmpUpRecognizer(int32_t warmup, int32_t mbs) const {
+  if (warmup > 0) {
+    impl_->WarmpUpRecognizer(warmup, mbs);
+  }
 }
 
 void OnlineRecognizer::DecodeStreams(OnlineStream **ss, int32_t n) const {

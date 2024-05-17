@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -ex
 if [ ! -f ./vits-piper-en_US-amy-low/en_US-amy-low.onnx ]; then
   # wget -qq https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2
   curl -OL https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2

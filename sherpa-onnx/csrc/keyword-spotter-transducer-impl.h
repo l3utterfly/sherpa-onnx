@@ -68,9 +68,11 @@ class KeywordSpotterTransducerImpl : public KeywordSpotterImpl {
       : config_(config),
         model_(OnlineTransducerModel::Create(config.model_config)),
         sym_(config.model_config.tokens) {
-    if (sym_.contains("<unk>")) {
+    if (sym_.Contains("<unk>")) {
       unk_id_ = sym_["<unk>"];
     }
+
+    model_->SetFeatureDim(config.feat_config.feature_dim);
 
     InitKeywords();
 
@@ -85,9 +87,11 @@ class KeywordSpotterTransducerImpl : public KeywordSpotterImpl {
       : config_(config),
         model_(OnlineTransducerModel::Create(mgr, config.model_config)),
         sym_(mgr, config.model_config.tokens) {
-    if (sym_.contains("<unk>")) {
+    if (sym_.Contains("<unk>")) {
       unk_id_ = sym_["<unk>"];
     }
+
+    model_->SetFeatureDim(config.feat_config.feature_dim);
 
     InitKeywords(mgr);
 
@@ -266,8 +270,14 @@ class KeywordSpotterTransducerImpl : public KeywordSpotterImpl {
   }
 
   void InitKeywords() {
+#ifdef SHERPA_ONNX_ENABLE_WASM_KWS
+    // Due to the limitations of the wasm file system,
+    // the keyword_file variable is directly parsed as a string of keywords
+    // if WASM KWS on
+    std::istringstream is(config_.keywords_file);
+    InitKeywords(is);
+#else
     // each line in keywords_file contains space-separated words
-
     std::ifstream is(config_.keywords_file);
     if (!is) {
       SHERPA_ONNX_LOGE("Open keywords file failed: %s",
@@ -275,6 +285,7 @@ class KeywordSpotterTransducerImpl : public KeywordSpotterImpl {
       exit(-1);
     }
     InitKeywords(is);
+#endif
   }
 
 #if __ANDROID_API__ >= 9
@@ -296,7 +307,7 @@ class KeywordSpotterTransducerImpl : public KeywordSpotterImpl {
 
   void InitOnlineStream(OnlineStream *stream) const {
     auto r = decoder_->GetEmptyResult();
-    SHERPA_ONNX_CHECK_EQ(r.hyps.size(), 1);
+    SHERPA_ONNX_CHECK_EQ(r.hyps.Size(), 1);
 
     SHERPA_ONNX_CHECK(stream->GetContextGraph() != nullptr);
     r.hyps.begin()->second.context_state = stream->GetContextGraph()->Root();

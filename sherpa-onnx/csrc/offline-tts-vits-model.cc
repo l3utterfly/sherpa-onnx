@@ -93,6 +93,7 @@ class OfflineTtsVitsModel::Impl {
     SHERPA_ONNX_READ_META_DATA_STR_WITH_DEFAULT(meta_data_.frontend, "frontend",
                                                 "");
 
+    SHERPA_ONNX_READ_META_DATA_WITH_DEFAULT(meta_data_.jieba, "jieba", 0);
     SHERPA_ONNX_READ_META_DATA_WITH_DEFAULT(meta_data_.blank_id, "blank_id", 0);
     SHERPA_ONNX_READ_META_DATA_WITH_DEFAULT(meta_data_.bos_id, "bos_id", 0);
     SHERPA_ONNX_READ_META_DATA_WITH_DEFAULT(meta_data_.eos_id, "eos_id", 0);
@@ -109,6 +110,10 @@ class OfflineTtsVitsModel::Impl {
 
     if (comment.find("coqui") != std::string::npos) {
       meta_data_.is_coqui = true;
+    }
+
+    if (comment.find("icefall") != std::string::npos) {
+      meta_data_.is_icefall = true;
     }
   }
 
@@ -219,7 +224,8 @@ class OfflineTtsVitsModel::Impl {
     inputs.push_back(std::move(length_scale_tensor));
     inputs.push_back(std::move(noise_scale_w_tensor));
 
-    if (input_names_.size() == 6 && input_names_.back() == "sid") {
+    if (input_names_.size() == 6 &&
+        (input_names_.back() == "sid" || input_names_.back() == "speaker")) {
       inputs.push_back(std::move(sid_tensor));
     }
 

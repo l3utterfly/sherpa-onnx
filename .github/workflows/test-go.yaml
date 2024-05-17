@@ -4,9 +4,23 @@ on:
   push:
     branches:
       - master
+    paths:
+      - '.github/workflows/test-go.yaml'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'sherpa-onnx/csrc/*'
+      - 'go-api-examples/**'
+      - 'scripts/go/**'
   pull_request:
     branches:
       - master
+    paths:
+      - '.github/workflows/test-go.yaml'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'sherpa-onnx/csrc/*'
+      - 'go-api-examples/**'
+      - 'scripts/go/**'
 
   workflow_dispatch:
 
@@ -35,7 +49,7 @@ jobs:
         with:
           key: ${{ matrix.os }}-${{ matrix.arch }}
 
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: '>=1.12'
 
@@ -59,6 +73,18 @@ jobs:
           cd ../scripts/go/_internal/
           go mod tidy
           go build
+
+      - name: Test streaming HLG decoding
+        shell: bash
+        run: |
+          cd scripts/go/_internal/streaming-hlg-decoding/
+          ./run.sh
+
+      - name: Test speaker identification
+        shell: bash
+        run: |
+          cd scripts/go/_internal/speaker-identification/
+          ./run.sh
 
       - name: Test non-streaming TTS (macOS)
         shell: bash
@@ -85,9 +111,11 @@ jobs:
           rm -rf vits-vctk
 
           echo "Test vits-zh-aishell3"
-          git clone https://huggingface.co/csukuangfj/vits-zh-aishell3
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-icefall-zh-aishell3.tar.bz2
+          tar xvf vits-icefall-zh-aishell3.tar.bz2
+          rm vits-icefall-zh-aishell3.tar.bz2
           ./run-vits-zh-aishell3.sh
-          rm -rf vits-zh-aishell3
+          rm -rf vits-icefall-zh-aishell3
 
           echo "Test vits-piper-en_US-lessac-medium"
           git clone https://huggingface.co/csukuangfj/vits-piper-en_US-lessac-medium
@@ -96,7 +124,7 @@ jobs:
 
           cp *.wav ../../../../tts-waves/
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: tts-waves
           path: tts-waves

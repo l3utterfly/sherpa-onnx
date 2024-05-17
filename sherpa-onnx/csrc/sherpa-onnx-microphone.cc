@@ -7,7 +7,8 @@
 #include <stdlib.h>
 
 #include <algorithm>
-#include <cctype>  // std::tolower
+#include <clocale>
+#include <cwctype>
 
 #include "portaudio.h"  // NOLINT
 #include "sherpa-onnx/csrc/display.h"
@@ -15,6 +16,7 @@
 #include "sherpa-onnx/csrc/online-recognizer.h"
 
 bool stop = false;
+float mic_sample_rate = 16000;
 
 static int32_t RecordCallback(const void *input_buffer,
                               void * /*output_buffer*/,
@@ -24,7 +26,8 @@ static int32_t RecordCallback(const void *input_buffer,
                               void *user_data) {
   auto stream = reinterpret_cast<sherpa_onnx::OnlineStream *>(user_data);
 
-  stream->AcceptWaveform(16000, reinterpret_cast<const float *>(input_buffer),
+  stream->AcceptWaveform(mic_sample_rate,
+                         reinterpret_cast<const float *>(input_buffer),
                          frames_per_buffer);
 
   return stop ? paComplete : paContinue;
@@ -33,6 +36,31 @@ static int32_t RecordCallback(const void *input_buffer,
 static void Handler(int32_t sig) {
   stop = true;
   fprintf(stderr, "\nCaught Ctrl + C. Exiting...\n");
+}
+
+static std::string tolowerUnicode(const std::string &input_str) {
+  // Use system locale
+  std::setlocale(LC_ALL, "");
+
+  // From char string to wchar string
+  std::wstring input_wstr(input_str.size() + 1, '\0');
+  std::mbstowcs(&input_wstr[0], input_str.c_str(), input_str.size());
+  std::wstring lowercase_wstr;
+
+  for (wchar_t wc : input_wstr) {
+    if (std::iswupper(wc)) {
+      lowercase_wstr += std::towlower(wc);
+    } else {
+      lowercase_wstr += wc;
+    }
+  }
+
+  // Back to char string
+  std::string lowercase_str(input_str.size() + 1, '\0');
+  std::wcstombs(&lowercase_str[0], lowercase_wstr.c_str(),
+                lowercase_wstr.size());
+
+  return lowercase_str;
 }
 
 int32_t main(int32_t argc, char *argv[]) {
@@ -81,14 +109,31 @@ for a list of pre-trained models to download.
   PaDeviceIndex num_devices = Pa_GetDeviceCount();
   fprintf(stderr, "Num devices: %d\n", num_devices);
 
-  PaStreamParameters param;
+  int32_t device_index = Pa_GetDefaultInputDevice();
 
-  param.device = Pa_GetDefaultInputDevice();
-  if (param.device == paNoDevice) {
+  if (device_index == paNoDevice) {
     fprintf(stderr, "No default input device found\n");
+    fprintf(stderr, "If you are using Linux, please switch to \n");
+    fprintf(stderr, " ./bin/sherpa-onnx-alsa \n");
     exit(EXIT_FAILURE);
   }
-  fprintf(stderr, "Use default device: %d\n", param.device);
+
+  const char *pDeviceIndex = std::getenv("SHERPA_ONNX_MIC_DEVICE");
+  if (pDeviceIndex) {
+    fprintf(stderr, "Use specified device: %s\n", pDeviceIndex);
+    device_index = atoi(pDeviceIndex);
+  }
+
+  for (int32_t i = 0; i != num_devices; ++i) {
+    const PaDeviceInfo *info = Pa_GetDeviceInfo(i);
+    fprintf(stderr, " %s %d %s\n", (i == device_index) ? "*" : " ", i,
+            info->name);
+  }
+
+  PaStreamParameters param;
+  param.device = device_index;
+
+  fprintf(stderr, "Use device: %d\n", param.device);
 
   const PaDeviceInfo *info = Pa_GetDeviceInfo(param.device);
   fprintf(stderr, "  Name: %s\n", info->name);
@@ -99,6 +144,11 @@ for a list of pre-trained models to download.
 
   param.suggestedLatency = info->defaultLowInputLatency;
   param.hostApiSpecificStreamInfo = nullptr;
+  const char *pSampleRateStr = std::getenv("SHERPA_ONNX_MIC_SAMPLE_RATE");
+  if (pSampleRateStr) {
+    fprintf(stderr, "Use sample rate %f for mic\n", mic_sample_rate);
+    mic_sample_rate = atof(pSampleRateStr);
+  }
   float sample_rate = 16000;
 
   PaStream *stream;
@@ -124,7 +174,7 @@ for a list of pre-trained models to download.
 
   std::string last_text;
   int32_t segment_index = 0;
-  sherpa_onnx::Display display;
+  sherpa_onnx::Display display(30);
   while (!stop) {
     while (recognizer.IsReady(s.get())) {
       recognizer.DecodeStream(s.get());
@@ -133,20 +183,28 @@ for a list of pre-trained models to download.
     auto text = recognizer.GetResult(s.get()).text;
     bool is_endpoint = recognizer.IsEndpoint(s.get());
 
+    if (is_endpoint && !config.model_config.paraformer.encoder.empty()) {
+      // For streaming paraformer models, since it has a large right chunk size
+      // we need to pad it on endpointing so that the last character
+      // can be recognized
+      std::vector<float> tail_paddings(static_cast<int>(1.0 * mic_sample_rate));
+      s->AcceptWaveform(mic_sample_rate, tail_paddings.data(),
+                        tail_paddings.size());
+      while (recognizer.IsReady(s.get())) {
+        recognizer.DecodeStream(s.get());
+      }
+      text = recognizer.GetResult(s.get()).text;
+    }
+
     if (!text.empty() && last_text != text) {
       last_text = text;
-
-      std::transform(text.begin(), text.end(), text.begin(),
-                     [](auto c) { return std::tolower(c); });
-
-      fprintf(stderr, "\r%d: %s", segment_index, text.c_str());
+      display.Print(segment_index, tolowerUnicode(text));
       fflush(stderr);
     }
 
     if (is_endpoint) {
       if (!text.empty()) {
         ++segment_index;
-        fprintf(stderr, "\n");
       }
 
       recognizer.Reset(s.get());

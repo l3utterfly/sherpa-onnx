@@ -32,11 +32,12 @@ static void PybindOfflineTtsConfig(py::module *m) {
   py::class_<PyClass>(*m, "OfflineTtsConfig")
       .def(py::init<>())
       .def(py::init<const OfflineTtsModelConfig &, const std::string &,
-                    int32_t>(),
+                    const std::string &, int32_t>(),
            py::arg("model"), py::arg("rule_fsts") = "",
-           py::arg("max_num_sentences") = 2)
+           py::arg("rule_fars") = "", py::arg("max_num_sentences") = 2)
       .def_readwrite("model", &PyClass::model)
       .def_readwrite("rule_fsts", &PyClass::rule_fsts)
+      .def_readwrite("rule_fars", &PyClass::rule_fars)
       .def_readwrite("max_num_sentences", &PyClass::max_num_sentences)
       .def("validate", &PyClass::Validate)
       .def("__str__", &PyClass::ToString);
@@ -55,14 +56,16 @@ void PybindOfflineTts(py::module *m) {
       .def(
           "generate",
           [](const PyClass &self, const std::string &text, int64_t sid,
-             float speed, std::function<void(py::array_t<float>)> callback)
+             float speed,
+             std::function<void(py::array_t<float>, float)> callback)
               -> GeneratedAudio {
             if (!callback) {
               return self.Generate(text, sid, speed);
             }
 
-            std::function<void(const float *, int32_t)> callback_wrapper =
-                [callback](const float *samples, int32_t n) {
+            std::function<void(const float *, int32_t, float)>
+                callback_wrapper = [callback](const float *samples, int32_t n,
+                                              float progress) {
                   // CAUTION(fangjun): we have to copy samples since it is
                   // freed once the call back returns.
 
@@ -72,7 +75,7 @@ void PybindOfflineTts(py::module *m) {
                   py::buffer_info buf = array.request();
                   auto p = static_cast<float *>(buf.ptr);
                   std::copy(samples, samples + n, p);
-                  callback(array);
+                  callback(array, progress);
                 };
 
             return self.Generate(text, sid, speed, callback_wrapper);

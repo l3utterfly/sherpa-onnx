@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 log() {
   # This function is from espnet
@@ -12,6 +12,48 @@ echo "EXE is $EXE"
 echo "PATH: $PATH"
 
 which $EXE
+
+log "------------------------------------------------------------"
+log "Run streaming NeMo CTC                                      "
+log "------------------------------------------------------------"
+
+url=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-streaming-fast-conformer-ctc-en-80ms.tar.bz2
+name=$(basename $url)
+repo=$(basename -s .tar.bz2 $name)
+
+curl -SL -O $url
+tar xvf $name
+rm $name
+ls -lh $repo
+
+$EXE \
+  --nemo-ctc-model=$repo/model.onnx \
+  --tokens=$repo/tokens.txt \
+  $repo/test_wavs/0.wav \
+  $repo/test_wavs/1.wav \
+  $repo/test_wavs/8k.wav
+
+rm -rf $repo
+
+log "------------------------------------------------------------"
+log "Run streaming Zipformer2 CTC HLG decoding                   "
+log "------------------------------------------------------------"
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-ctc-small-2024-03-18.tar.bz2
+tar xvf sherpa-onnx-streaming-zipformer-ctc-small-2024-03-18.tar.bz2
+rm sherpa-onnx-streaming-zipformer-ctc-small-2024-03-18.tar.bz2
+repo=$PWD/sherpa-onnx-streaming-zipformer-ctc-small-2024-03-18
+ls -lh $repo
+echo "pwd: $PWD"
+
+$EXE \
+  --zipformer2-ctc-model=$repo/ctc-epoch-30-avg-3-chunk-16-left-128.int8.onnx \
+  --ctc-graph=$repo/HLG.fst \
+  --tokens=$repo/tokens.txt \
+  $repo/test_wavs/0.wav \
+  $repo/test_wavs/1.wav \
+  $repo/test_wavs/8k.wav
+
+rm -rf sherpa-onnx-streaming-zipformer-ctc-small-2024-03-18
 
 log "------------------------------------------------------------"
 log "Run streaming Zipformer2 CTC                                "

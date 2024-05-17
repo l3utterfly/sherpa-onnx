@@ -16,6 +16,7 @@
 
 #include "sherpa-onnx/csrc/endpoint.h"
 #include "sherpa-onnx/csrc/features.h"
+#include "sherpa-onnx/csrc/online-ctc-fst-decoder-config.h"
 #include "sherpa-onnx/csrc/online-lm-config.h"
 #include "sherpa-onnx/csrc/online-model-config.h"
 #include "sherpa-onnx/csrc/online-stream.h"
@@ -40,6 +41,12 @@ struct OnlineRecognizerResult {
   /// timestamps[i] records the time in seconds when tokens[i] is decoded.
   std::vector<float> timestamps;
 
+  std::vector<float> ys_probs;  //< log-prob scores from ASR model
+  std::vector<float> lm_probs;  //< log-prob scores from language model
+                                //
+  /// log-domain scores from "hot-phrase" contextual boosting
+  std::vector<float> context_scores;
+
   /// ID of this segment
   /// When an endpoint is detected, it is incremented
   int32_t segment = 0;
@@ -58,6 +65,9 @@ struct OnlineRecognizerResult {
    *     "text": "The recognition result",
    *     "tokens": [x, x, x],
    *     "timestamps": [x, x, x],
+   *     "ys_probs": [x, x, x],
+   *     "lm_probs": [x, x, x],
+   *     "context_scores": [x, x, x],
    *     "segment": x,
    *     "start_time": x,
    *     "is_final": true|false
@@ -71,6 +81,7 @@ struct OnlineRecognizerConfig {
   OnlineModelConfig model_config;
   OnlineLMConfig lm_config;
   EndpointConfig endpoint_config;
+  OnlineCtcFstDecoderConfig ctc_fst_decoder_config;
   bool enable_endpoint = true;
 
   std::string decoding_method = "greedy_search";
@@ -85,27 +96,35 @@ struct OnlineRecognizerConfig {
 
   float blank_penalty = 0.0;
 
+  float temperature_scale = 2.0;
+
   OnlineRecognizerConfig() = default;
 
-  OnlineRecognizerConfig(const FeatureExtractorConfig &feat_config,
-                         const OnlineModelConfig &model_config,
-                         const OnlineLMConfig &lm_config,
-                         const EndpointConfig &endpoint_config,
-                         bool enable_endpoint,
-                         const std::string &decoding_method,
-                         int32_t max_active_paths,
-                         const std::string &hotwords_file, float hotwords_score,
-                         float blank_penalty)
+  OnlineRecognizerConfig(
+      const FeatureExtractorConfig &feat_config,
+      const OnlineModelConfig &model_config,
+      const OnlineLMConfig &lm_config,
+      const EndpointConfig &endpoint_config,
+      const OnlineCtcFstDecoderConfig &ctc_fst_decoder_config,
+      bool enable_endpoint,
+      const std::string &decoding_method,
+      int32_t max_active_paths,
+      const std::string &hotwords_file,
+      float hotwords_score,
+      float blank_penalty,
+      float temperature_scale)
       : feat_config(feat_config),
         model_config(model_config),
         lm_config(lm_config),
         endpoint_config(endpoint_config),
+        ctc_fst_decoder_config(ctc_fst_decoder_config),
         enable_endpoint(enable_endpoint),
         decoding_method(decoding_method),
         max_active_paths(max_active_paths),
-        hotwords_score(hotwords_score),
         hotwords_file(hotwords_file),
-        blank_penalty(blank_penalty) {}
+        hotwords_score(hotwords_score),
+        blank_penalty(blank_penalty),
+        temperature_scale(temperature_scale) {}
 
   void Register(ParseOptions *po);
   bool Validate() const;
@@ -150,6 +169,15 @@ class OnlineRecognizer {
     OnlineStream *ss[1] = {s};
     DecodeStreams(ss, 1);
   }
+
+  /**
+   * Warmups up onnxruntime sessions by apply optimization and
+   * allocating memory prior
+   *
+   * @param warmup Number of warmups.
+   * @param mbs : max-batch-size Max batch size for the models
+   */
+  void WarmpUpRecognizer(int32_t warmup, int32_t mbs) const;
 
   /** Decode multiple streams in parallel
    *

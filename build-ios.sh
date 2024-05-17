@@ -5,35 +5,24 @@ set -e
 dir=build-ios
 mkdir -p $dir
 cd $dir
-onnxruntime_version=1.16.3
+onnxruntime_version=1.17.1
+onnxruntime_dir=ios-onnxruntime/$onnxruntime_version
 
-if [ ! -f ios-onnxruntime/$onnxruntime_version/onnxruntime.xcframework/ios-arm64/onnxruntime.a ]; then
-  if [ ! -d ios-onnxruntime ]; then
-    GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/csukuangfj/ios-onnxruntime
-  fi
+SHERPA_ONNX_GITHUB=github.com
 
-  pushd ios-onnxruntime
-  git pull
+if [ "$SHERPA_ONNX_GITHUB_MIRROW" == true ]; then
+    SHERPA_ONNX_GITHUB=hub.nuaa.cf
+fi
 
+if [ ! -f $onnxruntime_dir/onnxruntime.xcframework/ios-arm64/onnxruntime.a ]; then
+  mkdir -p $onnxruntime_dir
+  pushd $onnxruntime_dir
+  wget -c https://${SHERPA_ONNX_GITHUB}/csukuangfj/onnxruntime-libs/releases/download/v${onnxruntime_version}/onnxruntime.xcframework-${onnxruntime_version}.tar.bz2
+  tar xvf onnxruntime.xcframework-${onnxruntime_version}.tar.bz2
+  rm onnxruntime.xcframework-${onnxruntime_version}.tar.bz2
+  cd ..
   ln -sf $onnxruntime_version/onnxruntime.xcframework .
-  git lfs pull --include $onnxruntime_version/onnxruntime.xcframework/ios-arm64/onnxruntime.a
-  git lfs pull --include $onnxruntime_version/onnxruntime.xcframework/ios-arm64_x86_64-simulator/onnxruntime.a
   popd
-fi
-
-# check filesize
-filesize=$(ls -l ./ios-onnxruntime/$onnxruntime_version/onnxruntime.xcframework/ios-arm64/onnxruntime.a  | tr -s " " " " | cut -d " " -f 5)
-if (( $filesize < 1000 )); then
-  ls -lh ./ios-onnxruntime/onnxruntime.xcframework/ios-arm64/onnxruntime.a
-  echo "Please use: git lfs pull to download ./ios-onnxruntime/$onnxruntime_version/onnxruntime.xcframework/ios-arm64/onnxruntime.a"
-  exit 1
-fi
-
-filesize=$(ls -l ./ios-onnxruntime/$onnxruntime_version/onnxruntime.xcframework/ios-arm64_x86_64-simulator/onnxruntime.a  | tr -s " " " " | cut -d " " -f 5)
-if (( $filesize < 1000 )); then
-  ls -lh ./ios-onnxruntime/$onnxruntime_version/onnxruntime.xcframework/ios-arm64_x86_64-simulator/onnxruntime.a
-  echo "Please use: git lfs pull to download ./ios-onnxruntime/$onnxruntime_version/onnxruntime.xcframework/ios-arm64_x86_64-simulator/onnxruntime.a"
-  exit 1
 fi
 
 # First, for simulator
@@ -140,6 +129,7 @@ echo "Generate xcframework"
 
 mkdir -p "build/simulator/lib"
 for f in libkaldi-native-fbank-core.a libsherpa-onnx-c-api.a libsherpa-onnx-core.a \
+         libsherpa-onnx-fstfar.a \
          libsherpa-onnx-fst.a libsherpa-onnx-kaldifst-core.a libkaldi-decoder-core.a \
          libucd.a libpiper_phonemize.a libespeak-ng.a; do
   lipo -create build/simulator_arm64/lib/${f} \
@@ -153,6 +143,7 @@ libtool -static -o build/simulator/sherpa-onnx.a \
   build/simulator/lib/libkaldi-native-fbank-core.a \
   build/simulator/lib/libsherpa-onnx-c-api.a \
   build/simulator/lib/libsherpa-onnx-core.a  \
+  build/simulator/lib/libsherpa-onnx-fstfar.a   \
   build/simulator/lib/libsherpa-onnx-fst.a   \
   build/simulator/lib/libsherpa-onnx-kaldifst-core.a \
   build/simulator/lib/libkaldi-decoder-core.a \
@@ -164,6 +155,7 @@ libtool -static -o build/os64/sherpa-onnx.a \
   build/os64/lib/libkaldi-native-fbank-core.a \
   build/os64/lib/libsherpa-onnx-c-api.a \
   build/os64/lib/libsherpa-onnx-core.a \
+  build/os64/lib/libsherpa-onnx-fstfar.a   \
   build/os64/lib/libsherpa-onnx-fst.a   \
   build/os64/lib/libsherpa-onnx-kaldifst-core.a \
   build/os64/lib/libkaldi-decoder-core.a \

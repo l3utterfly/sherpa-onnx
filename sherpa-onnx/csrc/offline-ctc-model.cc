@@ -20,10 +20,11 @@ namespace {
 
 enum class ModelType {
   kEncDecCTCModelBPE,
+  kEncDecHybridRNNTCTCBPEModel,
   kTdnn,
   kZipformerCtc,
   kWenetCtc,
-  kUnkown,
+  kUnknown,
 };
 
 }  // namespace
@@ -34,6 +35,8 @@ static ModelType GetModelType(char *model_data, size_t model_data_length,
                               bool debug) {
   Ort::Env env(ORT_LOGGING_LEVEL_WARNING);
   Ort::SessionOptions sess_opts;
+  sess_opts.SetIntraOpNumThreads(1);
+  sess_opts.SetInterOpNumThreads(1);
 
   auto sess = std::make_unique<Ort::Session>(env, model_data, model_data_length,
                                              sess_opts);
@@ -53,17 +56,22 @@ static ModelType GetModelType(char *model_data, size_t model_data_length,
         "No model_type in the metadata!\n"
         "If you are using models from NeMo, please refer to\n"
         "https://huggingface.co/csukuangfj/"
-        "sherpa-onnx-nemo-ctc-en-citrinet-512/blob/main/add-model-metadata.py"
+        "sherpa-onnx-nemo-ctc-en-citrinet-512/blob/main/add-model-metadata.py\n"
+        "or "
+        "https://github.com/k2-fsa/sherpa-onnx/tree/master/scripts/nemo/"
+        "fast-conformer-hybrid-transducer-ctc\n"
         "If you are using models from WeNet, please refer to\n"
         "https://github.com/k2-fsa/sherpa-onnx/blob/master/scripts/wenet/"
         "run.sh\n"
         "\n"
         "for how to add metadta to model.onnx\n");
-    return ModelType::kUnkown;
+    return ModelType::kUnknown;
   }
 
   if (model_type.get() == std::string("EncDecCTCModelBPE")) {
     return ModelType::kEncDecCTCModelBPE;
+  } else if (model_type.get() == std::string("EncDecHybridRNNTCTCBPEModel")) {
+    return ModelType::kEncDecHybridRNNTCTCBPEModel;
   } else if (model_type.get() == std::string("tdnn")) {
     return ModelType::kTdnn;
   } else if (model_type.get() == std::string("zipformer2_ctc")) {
@@ -72,13 +80,13 @@ static ModelType GetModelType(char *model_data, size_t model_data_length,
     return ModelType::kWenetCtc;
   } else {
     SHERPA_ONNX_LOGE("Unsupported model_type: %s", model_type.get());
-    return ModelType::kUnkown;
+    return ModelType::kUnknown;
   }
 }
 
 std::unique_ptr<OfflineCtcModel> OfflineCtcModel::Create(
     const OfflineModelConfig &config) {
-  ModelType model_type = ModelType::kUnkown;
+  ModelType model_type = ModelType::kUnknown;
 
   std::string filename;
   if (!config.nemo_ctc.model.empty()) {
@@ -104,6 +112,9 @@ std::unique_ptr<OfflineCtcModel> OfflineCtcModel::Create(
     case ModelType::kEncDecCTCModelBPE:
       return std::make_unique<OfflineNemoEncDecCtcModel>(config);
       break;
+    case ModelType::kEncDecHybridRNNTCTCBPEModel:
+      return std::make_unique<OfflineNemoEncDecHybridRNNTCTCBPEModel>(config);
+      break;
     case ModelType::kTdnn:
       return std::make_unique<OfflineTdnnCtcModel>(config);
       break;
@@ -113,7 +124,7 @@ std::unique_ptr<OfflineCtcModel> OfflineCtcModel::Create(
     case ModelType::kWenetCtc:
       return std::make_unique<OfflineWenetCtcModel>(config);
       break;
-    case ModelType::kUnkown:
+    case ModelType::kUnknown:
       SHERPA_ONNX_LOGE("Unknown model type in offline CTC!");
       return nullptr;
   }
@@ -125,7 +136,7 @@ std::unique_ptr<OfflineCtcModel> OfflineCtcModel::Create(
 
 std::unique_ptr<OfflineCtcModel> OfflineCtcModel::Create(
     AAssetManager *mgr, const OfflineModelConfig &config) {
-  ModelType model_type = ModelType::kUnkown;
+  ModelType model_type = ModelType::kUnknown;
 
   std::string filename;
   if (!config.nemo_ctc.model.empty()) {
@@ -151,6 +162,10 @@ std::unique_ptr<OfflineCtcModel> OfflineCtcModel::Create(
     case ModelType::kEncDecCTCModelBPE:
       return std::make_unique<OfflineNemoEncDecCtcModel>(mgr, config);
       break;
+    case ModelType::kEncDecHybridRNNTCTCBPEModel:
+      return std::make_unique<OfflineNemoEncDecHybridRNNTCTCBPEModel>(mgr,
+                                                                      config);
+      break;
     case ModelType::kTdnn:
       return std::make_unique<OfflineTdnnCtcModel>(mgr, config);
       break;
@@ -160,7 +175,7 @@ std::unique_ptr<OfflineCtcModel> OfflineCtcModel::Create(
     case ModelType::kWenetCtc:
       return std::make_unique<OfflineWenetCtcModel>(mgr, config);
       break;
-    case ModelType::kUnkown:
+    case ModelType::kUnknown:
       SHERPA_ONNX_LOGE("Unknown model type in offline CTC!");
       return nullptr;
   }

@@ -4,8 +4,15 @@ function(download_onnxruntime)
 
   message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
   message(STATUS "CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
-
-  if(CMAKE_SYSTEM_NAME STREQUAL Linux AND CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
+  if(SHERPA_ONNX_ENABLE_WASM)
+    include(onnxruntime-wasm-simd)
+  elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL riscv64)
+    if(BUILD_SHARED_LIBS)
+      include(onnxruntime-linux-riscv64)
+    else()
+      include(onnxruntime-linux-riscv64-static)
+    endif()
+  elseif(CMAKE_SYSTEM_NAME STREQUAL Linux AND CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
     if(BUILD_SHARED_LIBS)
       include(onnxruntime-linux-aarch64)
     else()
@@ -68,7 +75,13 @@ function(download_onnxruntime)
       if(BUILD_SHARED_LIBS)
         include(onnxruntime-win-x86)
       else()
-        include(onnxruntime-win-x86-static)
+        if(CMAKE_BUILD_TYPE STREQUAL Release)
+          include(onnxruntime-win-x86-static)
+        elseif(CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo OR CMAKE_BUILD_TYPE STREQUAL MinSizeRel)
+          include(onnxruntime-win-x86-static-debug)
+        else()
+          message(FATAL_ERROR "Support only CMAKE_BUILD_TYPE being Release, Debug, RelWithDebInfo, or MinSizeRel. Given: ${CMAKE_BUILD_TYPE}")
+        endif()
       endif()
 
       if(SHERPA_ONNX_ENABLE_GPU)
@@ -78,6 +91,7 @@ function(download_onnxruntime)
       # for 64-bit windows
 
       if(BUILD_SHARED_LIBS)
+        message(STATUS "Use dynamic onnxruntime libraries")
         if(SHERPA_ONNX_ENABLE_GPU)
           include(onnxruntime-win-x64-gpu)
         else()
@@ -86,7 +100,13 @@ function(download_onnxruntime)
       else()
         # static libraries for windows x64
         message(STATUS "Use static onnxruntime libraries")
-        include(onnxruntime-win-x64-static)
+        if(CMAKE_BUILD_TYPE STREQUAL Release)
+          include(onnxruntime-win-x64-static)
+        elseif(CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo OR CMAKE_BUILD_TYPE STREQUAL MinSizeRel)
+          include(onnxruntime-win-x64-static-debug)
+        else()
+          message(FATAL_ERROR "Support only CMAKE_BUILD_TYPE being Release, Debug, RelWithDebInfo, or MinSizeRel. Given: ${CMAKE_BUILD_TYPE}")
+        endif()
       endif()
     endif()
   else()
@@ -97,67 +117,69 @@ function(download_onnxruntime)
   set(onnxruntime_SOURCE_DIR ${onnxruntime_SOURCE_DIR} PARENT_SCOPE)
 endfunction()
 
-# First, we try to locate the header and the lib if the use has already
-# installed onnxruntime. Otherwise, we will download the pre-compiled lib
+if(SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE)
+  # First, we try to locate the header and the lib if the user has already
+  # installed onnxruntime. Otherwise, we will download the pre-compiled lib
 
-message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
-message(STATUS "CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
+  message(STATUS "CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+  message(STATUS "CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
 
-if(DEFINED ENV{SHERPA_ONNXRUNTIME_INCLUDE_DIR})
-  set(location_onnxruntime_header_dir $ENV{SHERPA_ONNXRUNTIME_INCLUDE_DIR})
+  if(DEFINED ENV{SHERPA_ONNXRUNTIME_INCLUDE_DIR})
+    set(location_onnxruntime_header_dir $ENV{SHERPA_ONNXRUNTIME_INCLUDE_DIR})
 
-  include_directories(${location_onnxruntime_header_dir})
-else()
-  find_path(location_onnxruntime_header_dir onnxruntime_cxx_api.h
-    PATHS
-      /usr/include
-      /usr/local/include
-  )
-endif()
-
-message(STATUS "location_onnxruntime_header_dir: ${location_onnxruntime_header_dir}")
-
-if(DEFINED ENV{SHERPA_ONNXRUNTIME_LIB_DIR})
-  if(APPLE)
-    set(location_onnxruntime_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime.dylib)
+    include_directories(${location_onnxruntime_header_dir})
   else()
-    set(location_onnxruntime_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime.so)
+    find_path(location_onnxruntime_header_dir onnxruntime_cxx_api.h
+      PATHS
+        /usr/include
+        /usr/local/include
+    )
   endif()
-  if(NOT EXISTS ${location_onnxruntime_lib})
-    set(location_onnxruntime_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime.a)
-    if(NOT EXISTS ${location_onnxruntime_lib})
-      message(FATAL_ERROR "${location_onnxruntime_lib} cannot be found")
-    endif()
-    set(onnxruntime_lib_files $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime.a)
-    message("Use static lib: ${onnxruntime_lib_files}")
-  endif()
-  if(SHERPA_ONNX_ENABLE_GPU)
-    set(location_onnxruntime_cuda_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime_providers_cuda.so)
-    if(NOT EXISTS ${location_onnxruntime_cuda_lib})
-      set(location_onnxruntime_cuda_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime_providers_cuda.a)
-    endif()
-  endif()
-else()
-  find_library(location_onnxruntime_lib onnxruntime
-    PATHS
-      /lib
-      /usr/lib
-      /usr/local/lib
-  )
 
-  if(SHERPA_ONNX_ENABLE_GPU)
-    find_library(location_onnxruntime_cuda_lib onnxruntime_providers_cuda
+  message(STATUS "location_onnxruntime_header_dir: ${location_onnxruntime_header_dir}")
+
+  if(DEFINED ENV{SHERPA_ONNXRUNTIME_LIB_DIR})
+    if(APPLE)
+      set(location_onnxruntime_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime.dylib)
+    else()
+      set(location_onnxruntime_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime.so)
+    endif()
+    if(NOT EXISTS ${location_onnxruntime_lib})
+      set(location_onnxruntime_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime.a)
+      if(NOT EXISTS ${location_onnxruntime_lib})
+        message(FATAL_ERROR "${location_onnxruntime_lib} cannot be found")
+      endif()
+      set(onnxruntime_lib_files $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime.a)
+      message("Use static lib: ${onnxruntime_lib_files}")
+    endif()
+    if(SHERPA_ONNX_ENABLE_GPU)
+      set(location_onnxruntime_cuda_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime_providers_cuda.so)
+      if(NOT EXISTS ${location_onnxruntime_cuda_lib})
+        set(location_onnxruntime_cuda_lib $ENV{SHERPA_ONNXRUNTIME_LIB_DIR}/libonnxruntime_providers_cuda.a)
+      endif()
+    endif()
+  else()
+    find_library(location_onnxruntime_lib onnxruntime
       PATHS
         /lib
         /usr/lib
         /usr/local/lib
     )
-  endif()
-endif()
 
-message(STATUS "location_onnxruntime_lib: ${location_onnxruntime_lib}")
-if(SHERPA_ONNX_ENABLE_GPU)
-  message(STATUS "location_onnxruntime_cuda_lib: ${location_onnxruntime_cuda_lib}")
+    if(SHERPA_ONNX_ENABLE_GPU)
+      find_library(location_onnxruntime_cuda_lib onnxruntime_providers_cuda
+        PATHS
+          /lib
+          /usr/lib
+          /usr/local/lib
+      )
+    endif()
+  endif()
+
+  message(STATUS "location_onnxruntime_lib: ${location_onnxruntime_lib}")
+  if(SHERPA_ONNX_ENABLE_GPU)
+    message(STATUS "location_onnxruntime_cuda_lib: ${location_onnxruntime_cuda_lib}")
+  endif()
 endif()
 
 if(location_onnxruntime_header_dir AND location_onnxruntime_lib)
@@ -175,6 +197,10 @@ if(location_onnxruntime_header_dir AND location_onnxruntime_lib)
     endif()
   endif()
 else()
-  message(STATUS "Could not find a pre-installed onnxruntime. Downloading pre-compiled onnxruntime")
+  if(SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE)
+    message(STATUS "Could not find a pre-installed onnxruntime.")
+  endif()
+  message(STATUS "Downloading pre-compiled onnxruntime")
+
   download_onnxruntime()
 endif()

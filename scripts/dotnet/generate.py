@@ -2,12 +2,15 @@
 # Copyright (c)  2023  Xiaomi Corporation
 
 import argparse
+import os
 import re
 from pathlib import Path
 
 import jinja2
 
 SHERPA_ONNX_DIR = Path(__file__).resolve().parent.parent.parent
+
+src_dir = os.environ.get("src_dir", "/tmp")
 
 
 def get_version():
@@ -36,15 +39,16 @@ def process_linux(s):
         "libespeak-ng.so",
         "libkaldi-decoder-core.so",
         "libkaldi-native-fbank-core.so",
-        "libonnxruntime.so.1.16.3",
+        "libonnxruntime.so.1.17.1",
         "libpiper_phonemize.so.1",
         "libsherpa-onnx-c-api.so",
         "libsherpa-onnx-core.so",
+        "libsherpa-onnx-fstfar.so.7",
         "libsherpa-onnx-fst.so.6",
         "libsherpa-onnx-kaldifst-core.so",
         "libucd.so",
     ]
-    prefix = "/tmp/linux/"
+    prefix = f"{src_dir}/linux/"
     libs = [prefix + lib for lib in libs]
     libs = "\n      ;".join(libs)
 
@@ -64,15 +68,16 @@ def process_macos(s):
         "libespeak-ng.dylib",
         "libkaldi-decoder-core.dylib",
         "libkaldi-native-fbank-core.dylib",
-        "libonnxruntime.1.16.3.dylib",
+        "libonnxruntime.1.17.1.dylib",
         "libpiper_phonemize.1.dylib",
         "libsherpa-onnx-c-api.dylib",
         "libsherpa-onnx-core.dylib",
+        "libsherpa-onnx-fstfar.7.dylib",
         "libsherpa-onnx-fst.6.dylib",
         "libsherpa-onnx-kaldifst-core.dylib",
         "libucd.dylib",
     ]
-    prefix = f"/tmp/macos/"
+    prefix = f"{src_dir}/macos/"
     libs = [prefix + lib for lib in libs]
     libs = "\n      ;".join(libs)
 
@@ -87,7 +92,7 @@ def process_macos(s):
         f.write(s)
 
 
-def process_windows(s):
+def process_windows(s, rid):
     libs = [
         "espeak-ng.dll",
         "kaldi-decoder-core.dll",
@@ -96,6 +101,7 @@ def process_windows(s):
         "piper_phonemize.dll",
         "sherpa-onnx-c-api.dll",
         "sherpa-onnx-core.dll",
+        "sherpa-onnx-fstfar.lib",
         "sherpa-onnx-fst.lib",
         "sherpa-onnx-kaldifst-core.lib",
         "ucd.dll",
@@ -103,18 +109,18 @@ def process_windows(s):
 
     version = get_version()
 
-    prefix = "/tmp/windows/"
+    prefix = f"{src_dir}/windows-{rid}/"
     libs = [prefix + lib for lib in libs]
     libs = "\n      ;".join(libs)
 
     d = get_dict()
-    d["dotnet_rid"] = "win-x64"
+    d["dotnet_rid"] = f"win-{rid}"
     d["libs"] = libs
 
     environment = jinja2.Environment()
     template = environment.from_string(s)
     s = template.render(**d)
-    with open("./windows/sherpa-onnx.runtime.csproj", "w") as f:
+    with open(f"./windows-{rid}/sherpa-onnx.runtime.csproj", "w") as f:
         f.write(s)
 
 
@@ -122,7 +128,8 @@ def main():
     s = read_proj_file("./sherpa-onnx.csproj.runtime.in")
     process_macos(s)
     process_linux(s)
-    process_windows(s)
+    process_windows(s, "x64")
+    process_windows(s, "x86")
 
     s = read_proj_file("./sherpa-onnx.csproj.in")
     d = get_dict()

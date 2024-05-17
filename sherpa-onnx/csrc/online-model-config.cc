@@ -15,11 +15,16 @@ void OnlineModelConfig::Register(ParseOptions *po) {
   paraformer.Register(po);
   wenet_ctc.Register(po);
   zipformer2_ctc.Register(po);
+  nemo_ctc.Register(po);
 
   po->Register("tokens", &tokens, "Path to tokens.txt");
 
   po->Register("num-threads", &num_threads,
                "Number of threads to run the neural network");
+
+  po->Register("warm-up", &warm_up,
+               "Number of warm-up to run the onnxruntime"
+               "Valid vales are: zipformer2");
 
   po->Register("debug", &debug,
                "true to print model information while loading it.");
@@ -27,11 +32,11 @@ void OnlineModelConfig::Register(ParseOptions *po) {
   po->Register("provider", &provider,
                "Specify a provider to use: cpu, cuda, coreml");
 
-  po->Register(
-      "model-type", &model_type,
-      "Specify it to reduce model initialization time. "
-      "Valid values are: conformer, lstm, zipformer, zipformer2, wenet_ctc"
-      "All other values lead to loading the model twice.");
+  po->Register("model-type", &model_type,
+               "Specify it to reduce model initialization time. "
+               "Valid values are: conformer, lstm, zipformer, zipformer2, "
+               "wenet_ctc, nemo_ctc. "
+               "All other values lead to loading the model twice.");
 }
 
 bool OnlineModelConfig::Validate() const {
@@ -41,7 +46,7 @@ bool OnlineModelConfig::Validate() const {
   }
 
   if (!FileExists(tokens)) {
-    SHERPA_ONNX_LOGE("tokens: %s does not exist", tokens.c_str());
+    SHERPA_ONNX_LOGE("tokens: '%s' does not exist", tokens.c_str());
     return false;
   }
 
@@ -57,6 +62,10 @@ bool OnlineModelConfig::Validate() const {
     return zipformer2_ctc.Validate();
   }
 
+  if (!nemo_ctc.model.empty()) {
+    return nemo_ctc.Validate();
+  }
+
   return transducer.Validate();
 }
 
@@ -68,8 +77,10 @@ std::string OnlineModelConfig::ToString() const {
   os << "paraformer=" << paraformer.ToString() << ", ";
   os << "wenet_ctc=" << wenet_ctc.ToString() << ", ";
   os << "zipformer2_ctc=" << zipformer2_ctc.ToString() << ", ";
+  os << "nemo_ctc=" << nemo_ctc.ToString() << ", ";
   os << "tokens=\"" << tokens << "\", ";
   os << "num_threads=" << num_threads << ", ";
+  os << "warm_up=" << warm_up << ", ";
   os << "debug=" << (debug ? "True" : "False") << ", ";
   os << "provider=\"" << provider << "\", ";
   os << "model_type=\"" << model_type << "\")";

@@ -2,8 +2,6 @@ name: build-wheels-linux
 
 on:
   push:
-    branches:
-      - wheel
     tags:
       - '*'
   workflow_dispatch:
@@ -12,18 +10,20 @@ env:
   SHERPA_ONNX_IS_IN_GITHUB_ACTIONS: 1
 
 concurrency:
-  group: build-wheels-${{ github.ref }}
+  group: build-wheels-linux-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build_wheels_linux:
-    name: ${{ matrix.python-version }}
+    name: ${{ matrix.manylinux }} ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
         python-version: ["cp37", "cp38", "cp39", "cp310", "cp311", "cp312"]
+        manylinux: [manylinux2014] #, manylinux_2_28]
+
 
     steps:
       - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
       # see https://cibuildwheel.readthedocs.io/en/stable/changelog/
       # for a list of versions
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.15.0
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_BEFORE_ALL: |
             git clone --depth 1 https://github.com/alsa-project/alsa-lib
@@ -46,6 +46,7 @@ jobs:
           CIBW_BUILD: "${{ matrix.python-version}}-* "
           CIBW_SKIP: "cp27-* cp35-* cp36-* *-win32 pp* *-musllinux* *-manylinux_i686"
           CIBW_BUILD_VERBOSITY: 3
+          CIBW_MANYLINUX_X86_64_IMAGE: quay.io/pypa/${{ matrix.manylinux }}_x86_64
 
       - name: Display wheels
         shell: bash
@@ -71,15 +72,16 @@ jobs:
           rm -rf ./wheelhouse
           mv ./wheels ./wheelhouse
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: wheel-${{ matrix.python-version }}-${{ matrix.manylinux }}
           path: ./wheelhouse/*.whl
 
       - name: Publish to huggingface
         if: matrix.python-version == 'cp38'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        uses: nick-fields/retry@v2
+        uses: nick-fields/retry@v3
         with:
           max_attempts: 20
           timeout_seconds: 200
@@ -108,6 +110,7 @@ jobs:
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        shell: bash
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install wheel twine setuptools
@@ -115,16 +118,17 @@ jobs:
           twine upload ./wheelhouse/*.whl
 
       - name: Build sdist
-        if: matrix.python-version == 'cp38'
+        if: matrix.python-version == 'cp38' && matrix.manylinux == 'manylinux2014'
         shell: bash
         run: |
           python3 setup.py sdist
           ls -l dist/*
 
       - name: Publish sdist to PyPI
-        if: matrix.python-version == 'cp38'
+        if: matrix.python-version == 'cp38' && matrix.manylinux == 'manylinux2014'
         env:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        shell: bash
         run: |
           twine upload dist/sherpa-onnx-*.tar.gz

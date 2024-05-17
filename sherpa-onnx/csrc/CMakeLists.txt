@@ -40,10 +40,11 @@ set(sources
   offline-tdnn-ctc-model.cc
   offline-tdnn-model-config.cc
   offline-transducer-greedy-search-decoder.cc
+  offline-transducer-greedy-search-nemo-decoder.cc
   offline-transducer-model-config.cc
   offline-transducer-model.cc
   offline-transducer-modified-beam-search-decoder.cc
-  offline-tts-character-frontend.cc
+  offline-transducer-nemo-model.cc
   offline-wenet-ctc-model-config.cc
   offline-wenet-ctc-model.cc
   offline-whisper-greedy-search-decoder.cc
@@ -52,12 +53,16 @@ set(sources
   offline-zipformer-ctc-model-config.cc
   offline-zipformer-ctc-model.cc
   online-conformer-transducer-model.cc
+  online-ctc-fst-decoder-config.cc
+  online-ctc-fst-decoder.cc
   online-ctc-greedy-search-decoder.cc
   online-ctc-model.cc
   online-lm-config.cc
   online-lm.cc
   online-lstm-transducer-model.cc
   online-model-config.cc
+  online-nemo-ctc-model-config.cc
+  online-nemo-ctc-model.cc
   online-paraformer-model-config.cc
   online-paraformer-model.cc
   online-recognizer-impl.cc
@@ -79,13 +84,14 @@ set(sources
   packed-sequence.cc
   pad-sequence.cc
   parse-options.cc
-  piper-phonemize-lexicon.cc
   provider.cc
   resample.cc
   session.cc
   silero-vad-model-config.cc
   silero-vad-model.cc
   slice.cc
+  spoken-language-identification-impl.cc
+  spoken-language-identification.cc
   stack.cc
   symbol-table.cc
   text-utils.cc
@@ -97,6 +103,7 @@ set(sources
   vad-model.cc
   voice-activity-detector.cc
   wave-reader.cc
+  wave-writer.cc
 )
 
 # speaker embedding extractor
@@ -108,15 +115,38 @@ list(APPEND sources
   speaker-embedding-manager.cc
 )
 
+# audio tagging
 list(APPEND sources
-  lexicon.cc
-  offline-tts-impl.cc
-  offline-tts-model-config.cc
-  offline-tts-vits-model-config.cc
-  offline-tts-vits-model.cc
-  offline-tts.cc
-  wave-writer.cc
+  audio-tagging-impl.cc
+  audio-tagging-label-file.cc
+  audio-tagging-model-config.cc
+  audio-tagging.cc
+  offline-ced-model.cc
+  offline-zipformer-audio-tagging-model-config.cc
+  offline-zipformer-audio-tagging-model.cc
 )
+
+# punctuation
+list(APPEND sources
+  offline-ct-transformer-model.cc
+  offline-punctuation-impl.cc
+  offline-punctuation-model-config.cc
+  offline-punctuation.cc
+)
+
+if(SHERPA_ONNX_ENABLE_TTS)
+  list(APPEND sources
+    jieba-lexicon.cc
+    lexicon.cc
+    offline-tts-character-frontend.cc
+    offline-tts-impl.cc
+    offline-tts-model-config.cc
+    offline-tts-vits-model-config.cc
+    offline-tts-vits-model.cc
+    offline-tts.cc
+    piper-phonemize-lexicon.cc
+  )
+endif()
 
 if(SHERPA_ONNX_ENABLE_CHECK)
   list(APPEND sources log.cc)
@@ -128,27 +158,14 @@ if(APPLE)
   )
 endif()
 
-if(NOT WIN32)
-  target_link_libraries(sherpa-onnx-core -pthread)
-endif()
-
 if(ANDROID_NDK)
   target_link_libraries(sherpa-onnx-core android log)
 endif()
 
-target_link_libraries(sherpa-onnx-core kaldi-native-fbank-core)
-
-target_link_libraries(sherpa-onnx-core kaldi-decoder-core)
-
-if(BUILD_SHARED_LIBS)
-  target_link_libraries(sherpa-onnx-core onnxruntime)
-else()
-  target_link_libraries(sherpa-onnx-core ${onnxruntime_lib_files})
-endif()
-
-if(NOT BUILD_SHARED_LIBS AND APPLE)
-  target_link_libraries(sherpa-onnx-core "-framework Foundation")
-endif()
+target_link_libraries(sherpa-onnx-core
+  kaldi-native-fbank-core
+  kaldi-decoder-core
+)
 
 if(SHERPA_ONNX_ENABLE_GPU)
   target_link_libraries(sherpa-onnx-core
@@ -157,7 +174,23 @@ if(SHERPA_ONNX_ENABLE_GPU)
   )
 endif()
 
-target_link_libraries(sherpa-onnx-core piper_phonemize)
+if(BUILD_SHARED_LIBS)
+  target_link_libraries(sherpa-onnx-core onnxruntime)
+else()
+  target_link_libraries(sherpa-onnx-core ${onnxruntime_lib_files})
+endif()
+
+target_link_libraries(sherpa-onnx-core -lm)
+
+if(NOT BUILD_SHARED_LIBS AND APPLE)
+  target_link_libraries(sherpa-onnx-core "-framework Foundation")
+endif()
+
+if(SHERPA_ONNX_ENABLE_TTS)
+  target_link_libraries(sherpa-onnx-core piper_phonemize)
+  target_link_libraries(sherpa-onnx-core fstfar fst)
+  target_link_libraries(sherpa-onnx-core cppjieba)
+endif()
 
 if(SHERPA_ONNX_ENABLE_CHECK)
   target_compile_definitions(sherpa-onnx-core PUBLIC SHERPA_ONNX_ENABLE_CHECK=1)
@@ -172,36 +205,55 @@ if(SHERPA_ONNX_ENABLE_CHECK)
 endif()
 
 if(NOT BUILD_SHARED_LIBS AND CMAKE_SYSTEM_NAME STREQUAL Linux)
-  target_link_libraries(sherpa-onnx-core -pthread -ldl)
+  target_link_libraries(sherpa-onnx-core -ldl)
 endif()
 
-add_executable(sherpa-onnx sherpa-onnx.cc)
-add_executable(sherpa-onnx-keyword-spotter sherpa-onnx-keyword-spotter.cc)
-add_executable(sherpa-onnx-offline sherpa-onnx-offline.cc)
-add_executable(sherpa-onnx-offline-parallel sherpa-onnx-offline-parallel.cc)
-add_executable(sherpa-onnx-offline-tts sherpa-onnx-offline-tts.cc)
+if(NOT WIN32 AND NOT SHERPA_ONNX_ENABLE_WASM AND CMAKE_SYSTEM_NAME STREQUAL Linux)
+  target_link_libraries(sherpa-onnx-core -pthread)
+endif()
 
-set(main_exes
-  sherpa-onnx
-  sherpa-onnx-keyword-spotter
-  sherpa-onnx-offline
-  sherpa-onnx-offline-parallel
-  sherpa-onnx-offline-tts
-)
+if(SHERPA_ONNX_ENABLE_BINARY)
+  add_executable(sherpa-onnx sherpa-onnx.cc)
+  add_executable(sherpa-onnx-keyword-spotter sherpa-onnx-keyword-spotter.cc)
+  add_executable(sherpa-onnx-offline sherpa-onnx-offline.cc)
+  add_executable(sherpa-onnx-offline-audio-tagging sherpa-onnx-offline-audio-tagging.cc)
+  add_executable(sherpa-onnx-offline-language-identification sherpa-onnx-offline-language-identification.cc)
+  add_executable(sherpa-onnx-offline-parallel sherpa-onnx-offline-parallel.cc)
+  add_executable(sherpa-onnx-offline-punctuation sherpa-onnx-offline-punctuation.cc)
 
-foreach(exe IN LISTS main_exes)
-  target_link_libraries(${exe} sherpa-onnx-core)
-endforeach()
+  if(SHERPA_ONNX_ENABLE_TTS)
+    add_executable(sherpa-onnx-offline-tts sherpa-onnx-offline-tts.cc)
+  endif()
 
-if(NOT WIN32)
+  set(main_exes
+    sherpa-onnx
+    sherpa-onnx-keyword-spotter
+    sherpa-onnx-offline
+    sherpa-onnx-offline-audio-tagging
+    sherpa-onnx-offline-language-identification
+    sherpa-onnx-offline-parallel
+    sherpa-onnx-offline-punctuation
+  )
+  if(SHERPA_ONNX_ENABLE_TTS)
+    list(APPEND main_exes
+      sherpa-onnx-offline-tts
+    )
+  endif()
+
   foreach(exe IN LISTS main_exes)
-    target_link_libraries(${exe} "-Wl,-rpath,${SHERPA_ONNX_RPATH_ORIGIN}/../lib")
-    target_link_libraries(${exe} "-Wl,-rpath,${SHERPA_ONNX_RPATH_ORIGIN}/../../../sherpa_onnx/lib")
-
-    if(SHERPA_ONNX_ENABLE_PYTHON)
-      target_link_libraries(${exe} "-Wl,-rpath,${SHERPA_ONNX_RPATH_ORIGIN}/../lib/python${PYTHON_VERSION}/site-packages/sherpa_onnx/lib")
-    endif()
+    target_link_libraries(${exe} sherpa-onnx-core)
   endforeach()
+
+  if(NOT WIN32)
+    foreach(exe IN LISTS main_exes)
+      target_link_libraries(${exe} "-Wl,-rpath,${SHERPA_ONNX_RPATH_ORIGIN}/../lib")
+      target_link_libraries(${exe} "-Wl,-rpath,${SHERPA_ONNX_RPATH_ORIGIN}/../../../sherpa_onnx/lib")
+
+      if(SHERPA_ONNX_ENABLE_PYTHON)
+        target_link_libraries(${exe} "-Wl,-rpath,${SHERPA_ONNX_RPATH_ORIGIN}/../lib/python${PYTHON_VERSION}/site-packages/sherpa_onnx/lib")
+      endif()
+    endforeach()
+  endif()
 endif()
 
 if(SHERPA_ONNX_ENABLE_PYTHON AND WIN32)
@@ -214,21 +266,43 @@ if(WIN32 AND BUILD_SHARED_LIBS)
   install(TARGETS sherpa-onnx-core DESTINATION bin)
 endif()
 
-install(
-  TARGETS
-    ${main_exes}
-  DESTINATION
-    bin
-)
+if(SHERPA_ONNX_ENABLE_BINARY)
+  install(
+    TARGETS
+      ${main_exes}
+    DESTINATION
+      bin
+  )
+endif()
 
-if(SHERPA_ONNX_HAS_ALSA)
+if(SHERPA_ONNX_HAS_ALSA AND SHERPA_ONNX_ENABLE_BINARY)
   add_executable(sherpa-onnx-alsa sherpa-onnx-alsa.cc alsa.cc)
-  add_executable(sherpa-onnx-offline-tts-play-alsa sherpa-onnx-offline-tts-play-alsa.cc alsa-play.cc)
+  add_executable(sherpa-onnx-alsa-offline sherpa-onnx-alsa-offline.cc alsa.cc)
+  add_executable(sherpa-onnx-alsa-offline-audio-tagging sherpa-onnx-alsa-offline-audio-tagging.cc alsa.cc)
+  add_executable(sherpa-onnx-alsa-offline-speaker-identification sherpa-onnx-alsa-offline-speaker-identification.cc alsa.cc)
+  add_executable(sherpa-onnx-keyword-spotter-alsa sherpa-onnx-keyword-spotter-alsa.cc alsa.cc)
+  add_executable(sherpa-onnx-vad-alsa sherpa-onnx-vad-alsa.cc alsa.cc)
+
+
+  if(SHERPA_ONNX_ENABLE_TTS)
+    add_executable(sherpa-onnx-offline-tts-play-alsa sherpa-onnx-offline-tts-play-alsa.cc alsa-play.cc)
+  endif()
 
   set(exes
     sherpa-onnx-alsa
-    sherpa-onnx-offline-tts-play-alsa
+    sherpa-onnx-alsa-offline
+    sherpa-onnx-alsa-offline-speaker-identification
+    sherpa-onnx-keyword-spotter-alsa
+    sherpa-onnx-vad-alsa
+    sherpa-onnx-alsa-offline-audio-tagging
   )
+
+  if(SHERPA_ONNX_ENABLE_TTS)
+    list(APPEND exes
+      sherpa-onnx-offline-tts-play-alsa
+    )
+  endif()
+
   foreach(exe IN LISTS exes)
     target_link_libraries(${exe} sherpa-onnx-core)
   endforeach()
@@ -261,9 +335,16 @@ if(SHERPA_ONNX_HAS_ALSA)
   )
 endif()
 
-if(SHERPA_ONNX_ENABLE_PORTAUDIO)
-  add_executable(sherpa-onnx-offline-tts-play
-    sherpa-onnx-offline-tts-play.cc
+if(SHERPA_ONNX_ENABLE_PORTAUDIO AND SHERPA_ONNX_ENABLE_BINARY)
+  if(SHERPA_ONNX_ENABLE_TTS)
+    add_executable(sherpa-onnx-offline-tts-play
+      sherpa-onnx-offline-tts-play.cc
+      microphone.cc
+    )
+  endif()
+
+  add_executable(sherpa-onnx-keyword-spotter-microphone
+    sherpa-onnx-keyword-spotter-microphone.cc
     microphone.cc
   )
 
@@ -292,6 +373,11 @@ if(SHERPA_ONNX_ENABLE_PORTAUDIO)
     microphone.cc
   )
 
+  add_executable(sherpa-onnx-microphone-offline-audio-tagging
+    sherpa-onnx-microphone-offline-audio-tagging.cc
+    microphone.cc
+  )
+
   if(BUILD_SHARED_LIBS)
     set(PA_LIB portaudio)
   else()
@@ -300,12 +386,19 @@ if(SHERPA_ONNX_ENABLE_PORTAUDIO)
 
   set(exes
     sherpa-onnx-microphone
+    sherpa-onnx-keyword-spotter-microphone
     sherpa-onnx-microphone-offline
     sherpa-onnx-microphone-offline-speaker-identification
-    sherpa-onnx-offline-tts-play
+    sherpa-onnx-microphone-offline-audio-tagging
     sherpa-onnx-vad-microphone
     sherpa-onnx-vad-microphone-offline-asr
   )
+  if(SHERPA_ONNX_ENABLE_TTS)
+    list(APPEND exes
+      sherpa-onnx-offline-tts-play
+    )
+  endif()
+
   foreach(exe IN LISTS exes)
     target_link_libraries(${exe} ${PA_LIB} sherpa-onnx-core)
   endforeach()
@@ -330,7 +423,7 @@ if(SHERPA_ONNX_ENABLE_PORTAUDIO)
   )
 endif()
 
-if(SHERPA_ONNX_ENABLE_WEBSOCKET)
+if(SHERPA_ONNX_ENABLE_WEBSOCKET AND SHERPA_ONNX_ENABLE_BINARY)
   add_definitions(-DASIO_STANDALONE)
   add_definitions(-D_WEBSOCKETPP_CPP11_STL_)
 
@@ -346,10 +439,8 @@ if(SHERPA_ONNX_ENABLE_WEBSOCKET)
   target_link_libraries(sherpa-onnx-online-websocket-client sherpa-onnx-core)
 
   if(NOT WIN32)
-    target_link_libraries(sherpa-onnx-online-websocket-server -pthread)
     target_compile_options(sherpa-onnx-online-websocket-server PRIVATE -Wno-deprecated-declarations)
 
-    target_link_libraries(sherpa-onnx-online-websocket-client -pthread)
     target_compile_options(sherpa-onnx-online-websocket-client PRIVATE -Wno-deprecated-declarations)
   endif()
 
@@ -361,7 +452,6 @@ if(SHERPA_ONNX_ENABLE_WEBSOCKET)
   target_link_libraries(sherpa-onnx-offline-websocket-server sherpa-onnx-core)
 
   if(NOT WIN32)
-    target_link_libraries(sherpa-onnx-offline-websocket-server -pthread)
     target_compile_options(sherpa-onnx-offline-websocket-server PRIVATE -Wno-deprecated-declarations)
   endif()
 
@@ -399,13 +489,18 @@ if(SHERPA_ONNX_ENABLE_TESTS)
     context-graph-test.cc
     packed-sequence-test.cc
     pad-sequence-test.cc
-    piper-phonemize-test.cc
     slice-test.cc
     stack-test.cc
     transpose-test.cc
     unbind-test.cc
     utfcpp-test.cc
   )
+  if(SHERPA_ONNX_ENABLE_TTS)
+    list(APPEND sherpa_onnx_test_srcs
+      cppjieba-test.cc
+      piper-phonemize-test.cc
+    )
+  endif()
 
   list(APPEND sherpa_onnx_test_srcs
     speaker-embedding-manager-test.cc

@@ -4,6 +4,8 @@
 
 #include "sherpa-onnx/python/csrc/offline-stream.h"
 
+#include <vector>
+
 #include "sherpa-onnx/csrc/offline-stream.h"
 
 namespace sherpa_onnx {
@@ -23,6 +25,7 @@ Args:
 static void PybindOfflineRecognitionResult(py::module *m) {  // NOLINT
   using PyClass = OfflineRecognitionResult;
   py::class_<PyClass>(*m, "OfflineRecognitionResult")
+      .def("__str__", &PyClass::AsJsonString)
       .def_property_readonly(
           "text",
           [](const PyClass &self) -> py::str {
@@ -35,35 +38,15 @@ static void PybindOfflineRecognitionResult(py::module *m) {  // NOLINT
           "timestamps", [](const PyClass &self) { return self.timestamps; });
 }
 
-static void PybindOfflineFeatureExtractorConfig(py::module *m) {
-  using PyClass = OfflineFeatureExtractorConfig;
-  py::class_<PyClass>(*m, "OfflineFeatureExtractorConfig")
-      .def(py::init<int32_t, int32_t>(), py::arg("sampling_rate") = 16000,
-           py::arg("feature_dim") = 80)
-      .def_readwrite("sampling_rate", &PyClass::sampling_rate)
-      .def_readwrite("feature_dim", &PyClass::feature_dim)
-      .def("__str__", &PyClass::ToString);
-}
-
 void PybindOfflineStream(py::module *m) {
-  PybindOfflineFeatureExtractorConfig(m);
   PybindOfflineRecognitionResult(m);
 
   using PyClass = OfflineStream;
   py::class_<PyClass>(*m, "OfflineStream")
       .def(
           "accept_waveform",
-          [](PyClass &self, float sample_rate, py::array_t<float> waveform) {
-#if 0
-            auto report_gil_status = []() {
-              auto is_gil_held = false;
-              if (auto tstate = py::detail::get_thread_state_unchecked())
-                is_gil_held = (tstate == PyGILState_GetThisThreadState());
-
-              return is_gil_held ? "GIL held" : "GIL released";
-            };
-            std::cout << report_gil_status() << "\n";
-#endif
+          [](PyClass &self, float sample_rate,
+             const std::vector<float> &waveform) {
             self.AcceptWaveform(sample_rate, waveform.data(), waveform.size());
           },
           py::arg("sample_rate"), py::arg("waveform"), kAcceptWaveformUsage,

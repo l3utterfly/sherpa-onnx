@@ -15,9 +15,12 @@ on:
       - '.github/scripts/test-offline-ctc.sh'
       - '.github/scripts/test-offline-tts.sh'
       - '.github/scripts/test-online-ctc.sh'
+      - '.github/scripts/test-audio-tagging.sh'
+      - '.github/scripts/test-offline-punctuation.sh'
       - 'CMakeLists.txt'
       - 'cmake/**'
       - 'sherpa-onnx/csrc/*'
+      - 'sherpa-onnx/c-api/*'
   pull_request:
     branches:
       - master
@@ -30,9 +33,12 @@ on:
       - '.github/scripts/test-offline-ctc.sh'
       - '.github/scripts/test-offline-tts.sh'
       - '.github/scripts/test-online-ctc.sh'
+      - '.github/scripts/test-audio-tagging.sh'
+      - '.github/scripts/test-offline-punctuation.sh'
       - 'CMakeLists.txt'
       - 'cmake/**'
       - 'sherpa-onnx/csrc/*'
+      - 'sherpa-onnx/c-api/*'
 
   workflow_dispatch:
 
@@ -43,13 +49,14 @@ concurrency:
 jobs:
   macos:
     runs-on: ${{ matrix.os }}
-    name: ${{ matrix.build_type }} ${{ matrix.lib_type }}
+    name: ${{ matrix.build_type }} ${{ matrix.lib_type }} tts-${{ matrix.with_tts }}
     strategy:
       fail-fast: false
       matrix:
         os: [macos-latest]
         build_type: [Release, Debug]
         lib_type: [static, shared]
+        with_tts: [ON, OFF]
 
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +66,7 @@ jobs:
       - name: ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.lib_type }}
+          key: ${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.lib_type }}-tts-${{ matrix.with_tts }}
 
       - name: Configure CMake
         shell: bash
@@ -77,7 +84,7 @@ jobs:
             BUILD_SHARED_LIBS=ON
           fi
 
-          cmake -D BUILD_SHARED_LIBS=$BUILD_SHARED_LIBS -D CMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64' -DCMAKE_INSTALL_PREFIX=./install ..
+          cmake -DSHERPA_ONNX_ENABLE_TTS=${{ matrix.with_tts }} -D BUILD_SHARED_LIBS=$BUILD_SHARED_LIBS -D CMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_OSX_ARCHITECTURES='arm64;x86_64' -DCMAKE_INSTALL_PREFIX=./install ..
 
       - name: Build sherpa-onnx for macos
         shell: bash
@@ -100,13 +107,13 @@ jobs:
           otool -L build/bin/sherpa-onnx
           otool -l build/bin/sherpa-onnx
 
-      - name: Test transducer kws
+      - name: Test offline transducer
         shell: bash
         run: |
           export PATH=$PWD/build/bin:$PATH
-          export EXE=sherpa-onnx-keyword-spotter
+          export EXE=sherpa-onnx-offline
 
-          .github/scripts/test-kws.sh
+          .github/scripts/test-offline-transducer.sh
 
       - name: Test online CTC
         shell: bash
@@ -116,7 +123,51 @@ jobs:
 
           .github/scripts/test-online-ctc.sh
 
+      - name: Test offline punctuation
+        shell: bash
+        run: |
+          export PATH=$PWD/build/bin:$PATH
+          export EXE=sherpa-onnx-offline-punctuation
+
+          .github/scripts/test-offline-punctuation.sh
+
+      - name: Test C API
+        shell: bash
+        run: |
+          export PATH=$PWD/build/bin:$PATH
+          export SLID_EXE=spoken-language-identification-c-api
+          export SID_EXE=speaker-identification-c-api
+          export AT_EXE=audio-tagging-c-api
+          export PUNCT_EXE=add-punctuation-c-api
+
+          .github/scripts/test-c-api.sh
+
+      - name: Test Audio tagging
+        shell: bash
+        run: |
+          export PATH=$PWD/build/bin:$PATH
+          export EXE=sherpa-onnx-offline-audio-tagging
+
+          .github/scripts/test-audio-tagging.sh
+
+      - name: Test spoken language identification (C++ API)
+        shell: bash
+        run: |
+          export PATH=$PWD/build/bin:$PATH
+          export EXE=sherpa-onnx-offline-language-identification
+
+          .github/scripts/test-spoken-language-identification.sh
+
+      - name: Test transducer kws
+        shell: bash
+        run: |
+          export PATH=$PWD/build/bin:$PATH
+          export EXE=sherpa-onnx-keyword-spotter
+
+          .github/scripts/test-kws.sh
+
       - name: Test offline TTS
+        if: matrix.with_tts == 'ON'
         shell: bash
         run: |
           export PATH=$PWD/build/bin:$PATH
@@ -133,6 +184,7 @@ jobs:
           .github/scripts/test-online-paraformer.sh
 
       - name: Test offline Whisper
+        if: matrix.build_type != 'Debug'
         shell: bash
         run: |
           export PATH=$PWD/build/bin:$PATH
@@ -147,14 +199,6 @@ jobs:
           export EXE=sherpa-onnx-offline
 
           .github/scripts/test-offline-ctc.sh
-
-      - name: Test offline transducer
-        shell: bash
-        run: |
-          export PATH=$PWD/build/bin:$PATH
-          export EXE=sherpa-onnx-offline
-
-          .github/scripts/test-offline-transducer.sh
 
       - name: Test online transducer
         shell: bash
@@ -173,12 +217,15 @@ jobs:
           .github/scripts/test-online-transducer.sh
 
       - name: Copy files
-        if: github.repository_owner == 'csukuangfj' || github.repository_owner == 'k2-fsa' && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         shell: bash
         run: |
           SHERPA_ONNX_VERSION=v$(grep "SHERPA_ONNX_VERSION" ./CMakeLists.txt  | cut -d " " -f 2  | cut -d '"' -f 2)
 
-          dst=sherpa-onnx-${SHERPA_ONNX_VERSION}-osx-universal2-${{ matrix.lib_type }}
+          if [[ ${{ matrix.with_tts }} ]]; then
+            dst=sherpa-onnx-${SHERPA_ONNX_VERSION}-osx-universal2-${{ matrix.lib_type }}
+          else
+            dst=sherpa-onnx-${SHERPA_ONNX_VERSION}-osx-universal2-${{ matrix.lib_type }}-no-tts
+          fi
           mkdir $dst
 
           cp -a build/install/bin $dst/
@@ -191,7 +238,7 @@ jobs:
           tar cjvf ${dst}.tar.bz2 $dst
 
       - name: Release pre-compiled binaries and libs for macOS
-        if: github.repository_owner == 'csukuangfj' || github.repository_owner == 'k2-fsa' && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+        if: (github.repository_owner == 'csukuangfj' || github.repository_owner == 'k2-fsa') && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
         uses: svenstaro/upload-release-action@v2
         with:
           file_glob: true

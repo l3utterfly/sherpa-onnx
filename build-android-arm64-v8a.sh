@@ -42,36 +42,34 @@ fi
 
 echo "ANDROID_NDK: $ANDROID_NDK"
 sleep 1
-onnxruntime_version=v1.16.3
+onnxruntime_version=1.17.1
 
-if [ ! -f ./android-onnxruntime-libs/$onnxruntime_version/jni/arm64-v8a/libonnxruntime.so ]; then
-  if [ ! -d android-onnxruntime-libs ]; then
-    GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/csukuangfj/android-onnxruntime-libs
-  fi
-  pushd android-onnxruntime-libs
-  git lfs pull --include "$onnxruntime_version/jni/arm64-v8a/libonnxruntime.so"
-  ln -s $onnxruntime_version/jni .
-  ln -s $onnxruntime_version/headers .
+if [ ! -f $onnxruntime_version/jni/arm64-v8a/libonnxruntime.so ]; then
+  mkdir -p $onnxruntime_version
+  pushd $onnxruntime_version
+  wget -c -q https://github.com/csukuangfj/onnxruntime-libs/releases/download/v${onnxruntime_version}/onnxruntime-android-${onnxruntime_version}.zip
+  unzip onnxruntime-android-${onnxruntime_version}.zip
+  rm onnxruntime-android-${onnxruntime_version}.zip
   popd
 fi
 
-ls -lh ./android-onnxruntime-libs/jni/arm64-v8a/libonnxruntime.so
-
-# check filesize
-filesize=$(ls -l ./android-onnxruntime-libs/jni/arm64-v8a/libonnxruntime.so | tr -s " " " " | cut -d " " -f 5)
-if (( $filesize < 1000 )); then
-  ls -lh ./android-onnxruntime-libs/jni/arm64-v8a/libonnxruntime.so
-  echo "Please use: git lfs pull to download libonnxruntime.so"
-  exit 1
-fi
-
-export SHERPA_ONNXRUNTIME_LIB_DIR=$dir/android-onnxruntime-libs/jni/arm64-v8a/
-export SHERPA_ONNXRUNTIME_INCLUDE_DIR=$dir/android-onnxruntime-libs/headers/
+export SHERPA_ONNXRUNTIME_LIB_DIR=$dir/$onnxruntime_version/jni/arm64-v8a/
+export SHERPA_ONNXRUNTIME_INCLUDE_DIR=$dir/$onnxruntime_version/headers/
 
 echo "SHERPA_ONNXRUNTIME_LIB_DIR: $SHERPA_ONNXRUNTIME_LIB_DIR"
 echo "SHERPA_ONNXRUNTIME_INCLUDE_DIR $SHERPA_ONNXRUNTIME_INCLUDE_DIR"
 
+if [ -z $SHERPA_ONNX_ENABLE_TTS ]; then
+  SHERPA_ONNX_ENABLE_TTS=ON
+fi
+
+if [ -z $SHERPA_ONNX_ENABLE_BINARY ]; then
+  SHERPA_ONNX_ENABLE_BINARY=OFF
+fi
+
 cmake -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
+    -DSHERPA_ONNX_ENABLE_TTS=$SHERPA_ONNX_ENABLE_TTS \
+    -DSHERPA_ONNX_ENABLE_BINARY=$SHERPA_ONNX_ENABLE_BINARY \
     -DBUILD_PIPER_PHONMIZE_EXE=OFF \
     -DBUILD_PIPER_PHONMIZE_TESTS=OFF \
     -DBUILD_ESPEAK_NG_EXE=OFF \
@@ -88,8 +86,42 @@ cmake -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" 
     -DANDROID_ABI="arm64-v8a" \
     -DANDROID_PLATFORM=android-21 ..
 
+# Please use -DANDROID_PLATFORM=android-27 if you want to use Android NNAPI
+
 # make VERBOSE=1 -j4
 make -j4
 make install/strip
-cp -fv android-onnxruntime-libs/jni/arm64-v8a/libonnxruntime.so install/lib
+cp -fv $onnxruntime_version/jni/arm64-v8a/libonnxruntime.so install/lib
 rm -rf install/lib/pkgconfig
+
+# To run the generated binaries on Android, please use the following steps.
+#
+#
+# 1. Copy sherpa-onnx and its dependencies to Android
+#
+#   cd build-android-arm64-v8a/install/lib
+#   adb push ./lib*.so /data/local/tmp
+#   cd ../bin
+#   adb push ./sherpa-onnx /data/local/tmp
+#
+# 2. Login into Android
+#
+#   adb shell
+#   cd /data/local/tmp
+#   ./sherpa-onnx
+#
+# which shows the following error log:
+#
+#  CANNOT LINK EXECUTABLE "./sherpa-onnx": library "libsherpa-onnx-core.so" not found: needed by main executable
+#
+# Please run:
+#
+#  export LD_LIBRARY_PATH=$PWD:$LD_LIBRARY_PATH
+#
+# and then you can run:
+#
+#  ./sherpa-onnx
+#
+# It should show the help message of sherpa-onnx.
+#
+# Please use the above approach to copy model files to your phone.
