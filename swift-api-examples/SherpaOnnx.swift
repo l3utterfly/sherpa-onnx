@@ -708,7 +708,7 @@ class SherpaOnnxGeneratedAudioWrapper {
 }
 
 // Define the callback type
-typealias SherpaOnnxGeneratedAudioCallback = @convention(c) (UnsafePointer<Float>, Int32) -> Void
+typealias SherpaOnnxGeneratedAudioCallback = Optional<@convention(c) (Optional<UnsafePointer<Float>>, Int32) -> ()>
 
 class SherpaOnnxOfflineTtsWrapper {
   /// A pointer to the underlying counterpart in C
@@ -739,6 +739,10 @@ class SherpaOnnxOfflineTtsWrapper {
       tts, toCPointer(text), Int32(sid), speed, callback)
 
     return SherpaOnnxGeneratedAudioWrapper(audio: audio)
+  }
+  
+  func sampleRate() -> Int32 {
+    return SherpaOnnxOfflineTtsSampleRate(tts)
   }
 }
 
