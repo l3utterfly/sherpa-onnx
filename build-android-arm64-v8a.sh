@@ -42,7 +42,7 @@ fi
 
 echo "ANDROID_NDK: $ANDROID_NDK"
 sleep 1
-onnxruntime_version=1.17.1
+onnxruntime_version=1.18.0
 
 if [ ! -f $onnxruntime_version/jni/arm64-v8a/libonnxruntime.so ]; then
   mkdir -p $onnxruntime_version
@@ -84,7 +84,7 @@ cmake -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" 
     -DSHERPA_ONNX_ENABLE_C_API=OFF \
     -DCMAKE_INSTALL_PREFIX=./install \
     -DANDROID_ABI="arm64-v8a" \
-    -DANDROID_PLATFORM=android-21 ..
+    -DANDROID_PLATFORM=android-27 ..
 
 # Please use -DANDROID_PLATFORM=android-27 if you want to use Android NNAPI
 
