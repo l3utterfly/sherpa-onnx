@@ -22,6 +22,22 @@ In the following, we describe how to use [sherpa-onnx](https://github.com/k2-fsa
 for text-to-speech and speech-to-text.
 
 
+# Speaker diarization
+
+In the following, we demonstrate how to run speaker diarization.
+
+```bash
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+tar xvf sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+rm sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/0-four-speakers-zh.wav
+
+node ./test-offline-speaker-diarization.js
+```
+
 # Text-to-speech
 
 In the following, we demonstrate how to run text-to-speech.
@@ -117,7 +133,25 @@ tar xvf sherpa-onnx-zipformer-en-2023-06-26.tar.bz2
 node ./test-offline-transducer.js
 ```
 
+## ./test-vad-with-non-streaming-asr-whisper.js
+
+[./test-vad-with-non-streaming-asr-whisper.js](./test-vad-with-non-streaming-asr-whisper.js)
+shows how to use VAD + whisper to decode a very long file.
+
+You can use the following command to run it:
+
+```bash
+wget -q https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-tiny.en.tar.bz2
+tar xvf sherpa-onnx-whisper-tiny.en.tar.bz2
+
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/Obama.wav
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx
+
+node ./test-vad-with-non-streaming-asr-whisper.js
+```
+
 ## ./test-offline-whisper.js
+
 [./test-offline-whisper.js](./test-offline-whisper.js) demonstrates
 how to decode a file with a Whisper model. In the code we use
 [sherpa-onnx-whisper-tiny.en](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/whisper/tiny.en.html).
@@ -130,7 +164,40 @@ tar xvf sherpa-onnx-whisper-tiny.en.tar.bz2
 node ./test-offline-whisper.js
 ```
 
+## ./test-offline-moonshine.js
+
+[./test-offline-moonshine.js](./test-offline-moonshine.js) demonstrates
+how to decode a file with a Moonshine model. In the code we use
+[sherpa-onnx-moonshine-tiny-en-int8](https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-moonshine-tiny-en-int8.tar.bz2).
+
+You can use the following command to run it:
+
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+tar xvf sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+
+node ./test-offline-moonshine.js
+```
+
+## ./test-vad-with-non-streaming-asr-moonshine.js
+
+[./test-vad-with-non-streaming-asr-moonshine.js](./test-vad-with-non-streaming-asr-moonshine.js)
+shows how to use VAD + whisper to decode a very long file.
+
+You can use the following command to run it:
+
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+tar xvf sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/Obama.wav
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx
+
+node ./test-vad-with-non-streaming-asr-moonshine.js
+```
+
 ## ./test-online-paraformer-microphone.js
+
 [./test-online-paraformer-microphone.js](./test-online-paraformer-microphone.js)
 demonstrates how to do real-time speech recognition from microphone
 with a streaming Paraformer model. In the code we use

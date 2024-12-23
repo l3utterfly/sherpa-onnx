@@ -6,6 +6,7 @@ export 'src/audio_tagging.dart';
 export 'src/feature_config.dart';
 export 'src/keyword_spotter.dart';
 export 'src/offline_recognizer.dart';
+export 'src/offline_speaker_diarization.dart';
 export 'src/offline_stream.dart';
 export 'src/online_recognizer.dart';
 export 'src/online_stream.dart';
@@ -24,11 +25,19 @@ String? _path;
 // https://github.com/flutter/codelabs/blob/main/ffigen_codelab/step_05/lib/ffigen_app.dart
 // https://api.flutter.dev/flutter/dart-io/Platform-class.html
 final DynamicLibrary _dylib = () {
-  if (Platform.isMacOS || Platform.isIOS) {
+  if (Platform.isMacOS) {
     if (_path == null) {
       return DynamicLibrary.open('libsherpa-onnx-c-api.dylib');
     } else {
       return DynamicLibrary.open('$_path/libsherpa-onnx-c-api.dylib');
+    }
+  }
+
+  if (Platform.isIOS) {
+    if (_path == null) {
+      return DynamicLibrary.open('sherpa_onnx.framework/sherpa_onnx');
+    } else {
+      return DynamicLibrary.open('$_path/sherpa_onnx.framework/sherpa_onnx');
     }
   }
 

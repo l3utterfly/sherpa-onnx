@@ -26,6 +26,7 @@ java_files += OnlineRecognizer.java
 java_files += OfflineTransducerModelConfig.java
 java_files += OfflineParaformerModelConfig.java
 java_files += OfflineWhisperModelConfig.java
+java_files += OfflineMoonshineModelConfig.java
 java_files += OfflineNemoEncDecCtcModelConfig.java
 java_files += OfflineSenseVoiceModelConfig.java
 java_files += OfflineModelConfig.java
@@ -67,6 +68,15 @@ java_files += Vad.java
 java_files += KeywordSpotterConfig.java
 java_files += KeywordSpotterResult.java
 java_files += KeywordSpotter.java
+
+java_files += OfflineSpeakerSegmentationPyannoteModelConfig.java
+java_files += OfflineSpeakerSegmentationModelConfig.java
+java_files += FastClusteringConfig.java
+java_files += OfflineSpeakerDiarizationConfig.java
+java_files += OfflineSpeakerDiarizationSegment.java
+java_files += OfflineSpeakerDiarizationCallback.java
+java_files += OfflineSpeakerDiarization.java
+
 
 class_files := $(java_files:%.java=%.class)
 

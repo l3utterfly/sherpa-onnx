@@ -43,6 +43,12 @@ export LD_LIBRARY_PATH=$PWD/node_modules/.pnpm/sherpa-onnx-node@<REPLACE-THIS-WI
 
 The following tables list the examples in this folder.
 
+## Speaker diarization
+
+|File| Description|
+|---|---|
+|[./test_offline_speaker_diarization.js](./test_offline_speaker_diarization.js)| It demonstrates how to use sherpa-onnx JavaScript API for speaker diarization. It supports speaker segmentation models from [pyannote-audio](https://github.com/pyannote/pyannote-audio)|
+
 ## Add punctuations to text
 
 |File| Description|
@@ -106,6 +112,8 @@ The following tables list the examples in this folder.
 |[./test_asr_non_streaming_transducer.js](./test_asr_non_streaming_transducer.js)|Non-streaming speech recognition from a file with a Zipformer transducer model|
 |[./test_asr_non_streaming_whisper.js](./test_asr_non_streaming_whisper.js)| Non-streaming speech recognition from a file using [Whisper](https://github.com/openai/whisper)|
 |[./test_vad_with_non_streaming_asr_whisper.js](./test_vad_with_non_streaming_asr_whisper.js)| Non-streaming speech recognition from a file using [Whisper](https://github.com/openai/whisper) + [Silero VAD](https://github.com/snakers4/silero-vad)|
+|[./test_asr_non_streaming_moonshine.js](./test_asr_non_streaming_moonshine.js)|Non-streaming speech recognition from a file using [Moonshine](https://github.com/usefulsensors/moonshine)|
+|[./test_vad_with_non_streaming_asr_moonshine.js](./test_vad_with_non_streaming_asr_moonshine.js)| Non-streaming speech recognition from a file using [Moonshine](https://github.com/usefulsensors/moonshine) + [Silero VAD](https://github.com/snakers4/silero-vad)|
 |[./test_asr_non_streaming_nemo_ctc.js](./test_asr_non_streaming_nemo_ctc.js)|Non-streaming speech recognition from a file using a [NeMo](https://github.com/NVIDIA/NeMo) CTC model with greedy search|
 |[./test_asr_non_streaming_paraformer.js](./test_asr_non_streaming_paraformer.js)|Non-streaming speech recognition from a file using [Paraformer](https://github.com/alibaba-damo-academy/FunASR)|
 |[./test_asr_non_streaming_sense_voice.js](./test_asr_non_streaming_sense_voice.js)|Non-streaming speech recognition from a file using [SenseVoice](https://github.com/FunAudioLLM/SenseVoice)|
@@ -116,6 +124,7 @@ The following tables list the examples in this folder.
 |---|---|
 |[./test_vad_asr_non_streaming_transducer_microphone.js](./test_vad_asr_non_streaming_transducer_microphone.js)|VAD + Non-streaming speech recognition from a microphone using a Zipformer transducer model|
 |[./test_vad_asr_non_streaming_whisper_microphone.js](./test_vad_asr_non_streaming_whisper_microphone.js)|VAD + Non-streaming speech recognition from a microphone using [Whisper](https://github.com/openai/whisper)|
+|[./test_vad_asr_non_streaming_moonshine_microphone.js](./test_vad_asr_non_streaming_moonshine_microphone.js)|VAD + Non-streaming speech recognition from a microphone using [Moonshine](https://github.com/usefulsensors/moonshine)|
 |[./test_vad_asr_non_streaming_nemo_ctc_microphone.js](./test_vad_asr_non_streaming_nemo_ctc_microphone.js)|VAD + Non-streaming speech recognition from a microphone using a [NeMo](https://github.com/NVIDIA/NeMo) CTC model with greedy search|
 |[./test_vad_asr_non_streaming_paraformer_microphone.js](./test_vad_asr_non_streaming_paraformer_microphone.js)|VAD + Non-streaming speech recognition from a microphone using [Paraformer](https://github.com/alibaba-damo-academy/FunASR)|
 |[./test_vad_asr_non_streaming_sense_voice_microphone.js](./test_vad_asr_non_streaming_sense_voice_microphone.js)|VAD + Non-streaming speech recognition from a microphone using [SenseVoice](https://github.com/FunAudioLLM/SenseVoice)|
@@ -129,6 +138,21 @@ The following tables list the examples in this folder.
 |[./test_tts_non_streaming_vits_zh_ll.js](./test_tts_non_streaming_vits_zh_ll.js)| Text-to-speech with a Chinese model using [cppjieba](https://github.com/yanyiwu/cppjieba)|
 |[./test_tts_non_streaming_vits_zh_aishell3.js](./test_tts_non_streaming_vits_zh_aishell3.js)| Text-to-speech with a Chinese TTS model|
 
+
+### Speaker diarization
+
+```bash
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+tar xvf sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+rm sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/0-four-speakers-zh.wav
+
+node ./test_offline_speaker_diarization.js
+```
 
 ### Voice Activity detection (VAD)
 
@@ -237,6 +261,33 @@ node ./test_asr_non_streaming_whisper.js
 # To run VAD + non-streaming ASR with Whisper using a microphone
 npm install naudiodon2
 node ./test_vad_asr_non_streaming_whisper_microphone.js
+```
+
+### Non-streaming speech recognition with Moonshine
+
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+tar xvf sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+rm sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+
+node ./test_asr_non_streaming_moonshine.js
+
+# To run VAD + non-streaming ASR with Moonshine using a microphone
+npm install naudiodon2
+node ./test_vad_asr_non_streaming_moonshine_microphone.js
+```
+
+### Non-streaming speech recognition with Moonshine + VAD
+
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+tar xvf sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+rm sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/Obama.wav
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx
+
+node ./test_vad_with_non_streaming_asr_moonshine.js
 ```
 
 ### Non-streaming speech recognition with Whisper + VAD

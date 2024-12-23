@@ -9,6 +9,35 @@ git status
 ls -lh
 ls -lh node_modules
 
+echo '-----speaker diarization----------'
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+tar xvf sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+rm sherpa-onnx-pyannote-segmentation-3-0.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/0-four-speakers-zh.wav
+
+node ./test-offline-speaker-diarization.js
+rm -rfv *.wav *.onnx sherpa-onnx-pyannote-*
+
+echo '-----vad+moonshine----------'
+
+curl -LS -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-tiny.en.tar.bz2
+tar xvf sherpa-onnx-whisper-tiny.en.tar.bz2
+rm sherpa-onnx-whisper-tiny.en.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+tar xvf sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+rm sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/Obama.wav
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx
+node ./test-vad-with-non-streaming-asr-whisper.js
+rm Obama.wav
+rm silero_vad.onnx
+rm -rf sherpa-onnx-moonshine-*
+
 echo '-----vad+whisper----------'
 
 curl -LS -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-tiny.en.tar.bz2
@@ -77,6 +106,13 @@ tar xvf sherpa-onnx-whisper-tiny.en.tar.bz2
 rm sherpa-onnx-whisper-tiny.en.tar.bz2
 node ./test-offline-whisper.js
 rm -rf sherpa-onnx-whisper-tiny.en
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+tar xvf sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+rm sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
+
+node ./test-offline-moonshine.js
+rm -rf sherpa-onnx-moonshine-*
 
 # online asr
 curl -LS -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2

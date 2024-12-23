@@ -12,12 +12,14 @@ endif()
 
 set(sources
   base64-decode.cc
+  bbpe.cc
   cat.cc
   circular-buffer.cc
   context-graph.cc
   endpoint.cc
   features.cc
   file-utils.cc
+  fst-utils.cc
   hypothesis.cc
   keyword-spotter-impl.cc
   keyword-spotter.cc
@@ -28,6 +30,9 @@ set(sources
   offline-lm-config.cc
   offline-lm.cc
   offline-model-config.cc
+  offline-moonshine-greedy-search-decoder.cc
+  offline-moonshine-model-config.cc
+  offline-moonshine-model.cc
   offline-nemo-enc-dec-ctc-model-config.cc
   offline-nemo-enc-dec-ctc-model.cc
   offline-paraformer-greedy-search-decoder.cc
@@ -74,11 +79,11 @@ set(sources
   online-stream.cc
   online-transducer-decoder.cc
   online-transducer-greedy-search-decoder.cc
+  online-transducer-greedy-search-nemo-decoder.cc
   online-transducer-model-config.cc
   online-transducer-model.cc
   online-transducer-modified-beam-search-decoder.cc
   online-transducer-nemo-model.cc
-  online-transducer-greedy-search-nemo-decoder.cc
   online-wenet-ctc-model-config.cc
   online-wenet-ctc-model.cc
   online-zipformer-transducer-model.cc
@@ -203,6 +208,12 @@ target_link_libraries(sherpa-onnx-core
   kaldi-decoder-core
   ssentencepiece_core
 )
+if(DEFINED OHOS AND x${OHOS} STREQUAL xOHOS)
+  target_link_libraries(sherpa-onnx-core
+    hilog_ndk.z
+    rawfile.z
+  )
+endif()
 
 if(SHERPA_ONNX_ENABLE_GPU)
   target_link_libraries(sherpa-onnx-core
@@ -210,7 +221,7 @@ if(SHERPA_ONNX_ENABLE_GPU)
   )
 endif()
 
-if(BUILD_SHARED_LIBS)
+if(BUILD_SHARED_LIBS AND NOT DEFINED onnxruntime_lib_files)
   target_link_libraries(sherpa-onnx-core onnxruntime)
 else()
   target_link_libraries(sherpa-onnx-core ${onnxruntime_lib_files})

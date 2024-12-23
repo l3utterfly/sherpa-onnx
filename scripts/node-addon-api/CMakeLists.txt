@@ -11,9 +11,7 @@ cmake_policy(SET CMP0042 NEW)
 
 project(sherpa-onnx)
 
-set(CMAKE_CXX_STANDARD 14)
-
-add_definitions(-DNAPI_VERSION=3)
+set(CMAKE_CXX_STANDARD 17)
 
 include_directories(${CMAKE_JS_INC})
 
@@ -21,6 +19,7 @@ set(srcs
   src/audio-tagging.cc
   src/keyword-spotting.cc
   src/non-streaming-asr.cc
+  src/non-streaming-speaker-diarization.cc
   src/non-streaming-tts.cc
   src/punctuation.cc
   src/sherpa-onnx-node-addon-api.cc

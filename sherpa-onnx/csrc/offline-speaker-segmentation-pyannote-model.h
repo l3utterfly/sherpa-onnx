@@ -17,6 +17,10 @@ class OfflineSpeakerSegmentationPyannoteModel {
   explicit OfflineSpeakerSegmentationPyannoteModel(
       const OfflineSpeakerSegmentationModelConfig &config);
 
+  template <typename Manager>
+  OfflineSpeakerSegmentationPyannoteModel(
+      Manager *mgr, const OfflineSpeakerSegmentationModelConfig &config);
+
   ~OfflineSpeakerSegmentationPyannoteModel();
 
   const OfflineSpeakerSegmentationPyannoteModelMetaData &GetModelMetaData()

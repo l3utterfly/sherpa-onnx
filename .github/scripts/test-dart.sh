@@ -4,6 +4,11 @@ set -ex
 
 cd dart-api-examples
 
+pushd speaker-diarization
+echo '----------speaker diarization----------'
+./run.sh
+popd
+
 pushd speaker-identification
 echo '----------3d speaker----------'
 ./run-3d-speaker.sh
@@ -29,6 +34,10 @@ rm -rf sherpa-onnx-*
 
 echo "----zipformer transducer----"
 ./run-zipformer-transducer.sh
+rm -rf sherpa-onnx-*
+
+echo "----moonshine----"
+./run-moonshine.sh
 rm -rf sherpa-onnx-*
 
 echo "----whisper----"
@@ -70,6 +79,10 @@ rm -rf sherpa-onnx-*
 
 echo '----------TeleSpeech CTC----------'
 ./run-telespeech-ctc.sh
+rm -rf sherpa-onnx-*
+
+echo '----------moonshine----------'
+./run-moonshine.sh
 rm -rf sherpa-onnx-*
 
 echo '----------whisper----------'

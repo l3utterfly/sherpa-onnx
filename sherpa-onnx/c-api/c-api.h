@@ -205,7 +205,8 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOnlineStream SherpaOnnxOnlineStream;
 /// @param config  Config for the recognizer.
 /// @return Return a pointer to the recognizer. The user has to invoke
 //          SherpaOnnxDestroyOnlineRecognizer() to free it to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxOnlineRecognizer *SherpaOnnxCreateOnlineRecognizer(
+SHERPA_ONNX_API const SherpaOnnxOnlineRecognizer *
+SherpaOnnxCreateOnlineRecognizer(
     const SherpaOnnxOnlineRecognizerConfig *config);
 
 /// Free a pointer returned by SherpaOnnxCreateOnlineRecognizer()
@@ -219,7 +220,7 @@ SHERPA_ONNX_API void SherpaOnnxDestroyOnlineRecognizer(
 /// @param recognizer  A pointer returned by SherpaOnnxCreateOnlineRecognizer()
 /// @return Return a pointer to an OnlineStream. The user has to invoke
 ///         SherpaOnnxDestroyOnlineStream() to free it to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxOnlineStream *SherpaOnnxCreateOnlineStream(
+SHERPA_ONNX_API const SherpaOnnxOnlineStream *SherpaOnnxCreateOnlineStream(
     const SherpaOnnxOnlineRecognizer *recognizer);
 
 /// Create an online stream for accepting wave samples with the specified hot
@@ -228,7 +229,7 @@ SHERPA_ONNX_API SherpaOnnxOnlineStream *SherpaOnnxCreateOnlineStream(
 /// @param recognizer  A pointer returned by SherpaOnnxCreateOnlineRecognizer()
 /// @return Return a pointer to an OnlineStream. The user has to invoke
 ///         SherpaOnnxDestroyOnlineStream() to free it to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxOnlineStream *
+SHERPA_ONNX_API const SherpaOnnxOnlineStream *
 SherpaOnnxCreateOnlineStreamWithHotwords(
     const SherpaOnnxOnlineRecognizer *recognizer, const char *hotwords);
 
@@ -388,6 +389,13 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineWhisperModelConfig {
   int32_t tail_paddings;
 } SherpaOnnxOfflineWhisperModelConfig;
 
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineMoonshineModelConfig {
+  const char *preprocessor;
+  const char *encoder;
+  const char *uncached_decoder;
+  const char *cached_decoder;
+} SherpaOnnxOfflineMoonshineModelConfig;
+
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTdnnModelConfig {
   const char *model;
 } SherpaOnnxOfflineTdnnModelConfig;
@@ -423,6 +431,7 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineModelConfig {
   const char *bpe_vocab;
   const char *telespeech_ctc;
   SherpaOnnxOfflineSenseVoiceModelConfig sense_voice;
+  SherpaOnnxOfflineMoonshineModelConfig moonshine;
 } SherpaOnnxOfflineModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineRecognizerConfig {
@@ -452,7 +461,8 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineStream SherpaOnnxOfflineStream;
 /// @return Return a pointer to the recognizer. The user has to invoke
 //          SherpaOnnxDestroyOfflineRecognizer() to free it to avoid memory
 //          leak.
-SHERPA_ONNX_API SherpaOnnxOfflineRecognizer *SherpaOnnxCreateOfflineRecognizer(
+SHERPA_ONNX_API const SherpaOnnxOfflineRecognizer *
+SherpaOnnxCreateOfflineRecognizer(
     const SherpaOnnxOfflineRecognizerConfig *config);
 
 /// @param config  Config for the recognizer.
@@ -464,14 +474,14 @@ SHERPA_ONNX_API void SherpaOnnxOfflineRecognizerSetConfig(
 ///
 /// @param p A pointer returned by SherpaOnnxCreateOfflineRecognizer()
 SHERPA_ONNX_API void SherpaOnnxDestroyOfflineRecognizer(
-    SherpaOnnxOfflineRecognizer *recognizer);
+    const SherpaOnnxOfflineRecognizer *recognizer);
 
 /// Create an offline stream for accepting wave samples.
 ///
 /// @param recognizer  A pointer returned by SherpaOnnxCreateOfflineRecognizer()
 /// @return Return a pointer to an OfflineStream. The user has to invoke
 ///         SherpaOnnxDestroyOfflineStream() to free it to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxOfflineStream *SherpaOnnxCreateOfflineStream(
+SHERPA_ONNX_API const SherpaOnnxOfflineStream *SherpaOnnxCreateOfflineStream(
     const SherpaOnnxOfflineRecognizer *recognizer);
 
 /// Destroy an offline stream.
@@ -517,8 +527,8 @@ SHERPA_ONNX_API void SherpaOnnxDecodeOfflineStream(
 ///                by SherpaOnnxCreateOfflineStream().
 /// @param n Number of entries in the given streams.
 SHERPA_ONNX_API void SherpaOnnxDecodeMultipleOfflineStreams(
-    SherpaOnnxOfflineRecognizer *recognizer, SherpaOnnxOfflineStream **streams,
-    int32_t n);
+    const SherpaOnnxOfflineRecognizer *recognizer,
+    const SherpaOnnxOfflineStream **streams, int32_t n);
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineRecognizerResult {
   const char *text;
@@ -920,6 +930,9 @@ typedef int32_t (*SherpaOnnxGeneratedAudioCallbackWithArg)(const float *samples,
 typedef int32_t (*SherpaOnnxGeneratedAudioProgressCallback)(
     const float *samples, int32_t n, float p);
 
+typedef int32_t (*SherpaOnnxGeneratedAudioProgressCallbackWithArg)(
+    const float *samples, int32_t n, float p, void *arg);
+
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTts SherpaOnnxOfflineTts;
 
 // Create an instance of offline TTS. The user has to use DestroyOfflineTts()
@@ -954,10 +967,18 @@ SherpaOnnxOfflineTtsGenerateWithCallback(
     const SherpaOnnxOfflineTts *tts, const char *text, int32_t sid, float speed,
     SherpaOnnxGeneratedAudioCallback callback);
 
+SHERPA_ONNX_API
 const SherpaOnnxGeneratedAudio *
 SherpaOnnxOfflineTtsGenerateWithProgressCallback(
     const SherpaOnnxOfflineTts *tts, const char *text, int32_t sid, float speed,
+
     SherpaOnnxGeneratedAudioProgressCallback callback);
+
+SHERPA_ONNX_API
+const SherpaOnnxGeneratedAudio *
+SherpaOnnxOfflineTtsGenerateWithProgressCallbackWithArg(
+    const SherpaOnnxOfflineTts *tts, const char *text, int32_t sid, float speed,
+    SherpaOnnxGeneratedAudioProgressCallbackWithArg callback, void *arg);
 
 // Same as SherpaOnnxGeneratedAudioCallback but you can pass an additional
 // `void* arg` to the callback.
@@ -990,6 +1011,14 @@ SHERPA_ONNX_API typedef struct SherpaOnnxWave {
 // If the returned pointer is not NULL, the user has to invoke
 // SherpaOnnxFreeWave() to free the returned pointer to avoid memory leak.
 SHERPA_ONNX_API const SherpaOnnxWave *SherpaOnnxReadWave(const char *filename);
+
+// Similar to SherpaOnnxReadWave(), it has read the content of `filename`
+// into the array `data`.
+//
+// If the returned pointer is not NULL, the user has to invoke
+// SherpaOnnxFreeWave() to free the returned pointer to avoid memory leak.
+SHERPA_ONNX_API const SherpaOnnxWave *SherpaOnnxReadWaveFromBinaryData(
+    const char *data, int32_t n);
 
 SHERPA_ONNX_API void SherpaOnnxFreeWave(const SherpaOnnxWave *wave);
 
@@ -1449,6 +1478,11 @@ SHERPA_ONNX_API void SherpaOnnxDestroyOfflineSpeakerDiarization(
 SHERPA_ONNX_API int32_t SherpaOnnxOfflineSpeakerDiarizationGetSampleRate(
     const SherpaOnnxOfflineSpeakerDiarization *sd);
 
+// Only config->clustering is used. All other fields are ignored
+SHERPA_ONNX_API void SherpaOnnxOfflineSpeakerDiarizationSetConfig(
+    const SherpaOnnxOfflineSpeakerDiarization *sd,
+    const SherpaOnnxOfflineSpeakerDiarizationConfig *config);
+
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineSpeakerDiarizationResult
     SherpaOnnxOfflineSpeakerDiarizationResult;
 
@@ -1478,7 +1512,10 @@ SHERPA_ONNX_API void SherpaOnnxOfflineSpeakerDiarizationDestroySegment(
     const SherpaOnnxOfflineSpeakerDiarizationSegment *s);
 
 typedef int32_t (*SherpaOnnxOfflineSpeakerDiarizationProgressCallback)(
-    int32_t num_processed_chunk, int32_t num_total_chunks, void *arg);
+    int32_t num_processed_chunks, int32_t num_total_chunks, void *arg);
+
+typedef int32_t (*SherpaOnnxOfflineSpeakerDiarizationProgressCallbackNoArg)(
+    int32_t num_processed_chunks, int32_t num_total_chunks);
 
 // The user has to invoke SherpaOnnxOfflineSpeakerDiarizationDestroyResult()
 // to free the returned pointer to avoid memory leak.
@@ -1495,8 +1532,57 @@ SherpaOnnxOfflineSpeakerDiarizationProcessWithCallback(
     int32_t n, SherpaOnnxOfflineSpeakerDiarizationProgressCallback callback,
     void *arg);
 
+SHERPA_ONNX_API const SherpaOnnxOfflineSpeakerDiarizationResult *
+SherpaOnnxOfflineSpeakerDiarizationProcessWithCallbackNoArg(
+    const SherpaOnnxOfflineSpeakerDiarization *sd, const float *samples,
+    int32_t n,
+    SherpaOnnxOfflineSpeakerDiarizationProgressCallbackNoArg callback);
+
 SHERPA_ONNX_API void SherpaOnnxOfflineSpeakerDiarizationDestroyResult(
     const SherpaOnnxOfflineSpeakerDiarizationResult *r);
+
+#ifdef __OHOS__
+
+// It is for HarmonyOS
+typedef struct NativeResourceManager NativeResourceManager;
+
+/// @param config  Config for the recognizer.
+/// @return Return a pointer to the recognizer. The user has to invoke
+//          SherpaOnnxDestroyOnlineRecognizer() to free it to avoid memory leak.
+SHERPA_ONNX_API const SherpaOnnxOnlineRecognizer *
+SherpaOnnxCreateOnlineRecognizerOHOS(
+    const SherpaOnnxOnlineRecognizerConfig *config, NativeResourceManager *mgr);
+
+/// @param config  Config for the recognizer.
+/// @return Return a pointer to the recognizer. The user has to invoke
+//          SherpaOnnxDestroyOfflineRecognizer() to free it to avoid memory
+//          leak.
+SHERPA_ONNX_API const SherpaOnnxOfflineRecognizer *
+SherpaOnnxCreateOfflineRecognizerOHOS(
+    const SherpaOnnxOfflineRecognizerConfig *config,
+    NativeResourceManager *mgr);
+
+// Return an instance of VoiceActivityDetector.
+// The user has to use SherpaOnnxDestroyVoiceActivityDetector() to free
+// the returned pointer to avoid memory leak.
+SHERPA_ONNX_API SherpaOnnxVoiceActivityDetector *
+SherpaOnnxCreateVoiceActivityDetectorOHOS(
+    const SherpaOnnxVadModelConfig *config, float buffer_size_in_seconds,
+    NativeResourceManager *mgr);
+
+SHERPA_ONNX_API SherpaOnnxOfflineTts *SherpaOnnxCreateOfflineTtsOHOS(
+    const SherpaOnnxOfflineTtsConfig *config, NativeResourceManager *mgr);
+
+SHERPA_ONNX_API const SherpaOnnxSpeakerEmbeddingExtractor *
+SherpaOnnxCreateSpeakerEmbeddingExtractorOHOS(
+    const SherpaOnnxSpeakerEmbeddingExtractorConfig *config,
+    NativeResourceManager *mgr);
+
+SHERPA_ONNX_API const SherpaOnnxOfflineSpeakerDiarization *
+SherpaOnnxCreateOfflineSpeakerDiarizationOHOS(
+    const SherpaOnnxOfflineSpeakerDiarizationConfig *config,
+    NativeResourceManager *mgr);
+#endif
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop

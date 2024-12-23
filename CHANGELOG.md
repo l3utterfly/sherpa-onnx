@@ -1,3 +1,118 @@
+## 1.10.35
+
+* Add missing changes about speaker identfication demo for HarmonyOS (#1612)
+* Provide sherpa-onnx.aar for Android (#1615)
+* Use aar in Android Java demo. (#1616)
+
+## 1.10.34
+
+* Fix building node-addon package (#1598)
+* Update doc links for HarmonyOS (#1601)
+* Add on-device real-time ASR demo for HarmonyOS (#1606)
+* Add speaker identification APIs for HarmonyOS (#1607)
+* Add speaker identification demo for HarmonyOS (#1608)
+* Add speaker diarization API for HarmonyOS. (#1609)
+* Add speaker diarization demo for HarmonyOS (#1610)
+
+## 1.10.33
+
+* Add non-streaming ASR support for HarmonyOS. (#1564)
+* Add streaming ASR support for HarmonyOS. (#1565)
+* Fix building for Android (#1568)
+* Publish `sherpa_onnx.har` for HarmonyOS (#1572)
+* Add VAD+ASR demo for HarmonyOS (#1573)
+* Fix publishing har packages for HarmonyOS (#1576)
+* Add CI to build HAPs for HarmonyOS (#1578)
+* Add microphone demo about VAD+ASR for HarmonyOS (#1581)
+* Fix getting microphone permission for HarmonyOS VAD+ASR example (#1582)
+* Add HarmonyOS support for text-to-speech. (#1584)
+* Fix: support both old and new websockets request headers format (#1588)
+* Add on-device tex-to-speech (TTS) demo for HarmonyOS (#1590)
+
+## 1.10.32
+
+* Support cross-compiling for HarmonyOS (#1553)
+* HarmonyOS support for VAD. (#1561)
+* Fix publishing flutter iOS app to appstore (#1563).
+
+## 1.10.31
+
+* Publish pre-built wheels for Python 3.13 (#1485)
+* Publish pre-built macos xcframework (#1490)
+* Fix reading tokens.txt on Windows. (#1497)
+* Add two-pass ASR Android APKs for Moonshine models. (#1499)
+* Support building GPU-capable sherpa-onnx on Linux aarch64. (#1500)
+* Publish pre-built wheels with CUDA support for Linux aarch64. (#1507)
+* Export the English TTS model from MeloTTS (#1509)
+* Add Lazarus example for Moonshine models. (#1532)
+* Add isolate_tts demo (#1529)
+* Add WebAssembly example for VAD + Moonshine models. (#1535)
+* Add Android APK for streaming Paraformer ASR (#1538)
+* Support static build for windows arm64. (#1539)
+* Use xcframework for Flutter iOS plugin to support iOS simulators.
+
+## 1.10.30
+
+* Fix building node-addon for Windows x86. (#1469)
+* Begin to support https://github.com/usefulsensors/moonshine (#1470)
+* Publish pre-built JNI libs for Linux aarch64 (#1472)
+* Add C++ runtime and Python APIs for Moonshine models (#1473)
+* Add Kotlin and Java API for Moonshine models (#1474)
+* Add C and C++ API for Moonshine models (#1476)
+* Add Swift API for Moonshine models. (#1477)
+* Add Go API examples for adding punctuations to text. (#1478)
+* Add Go API for Moonshine models (#1479)
+* Add JavaScript API for Moonshine models (#1480)
+* Add Dart API for Moonshine models. (#1481)
+* Add Pascal API for Moonshine models (#1482)
+* Add C# API for Moonshine models. (#1483)
+
+## 1.10.29
+
+* Add Go API for offline punctuation models (#1434)
+* Support https://huggingface.co/Revai/reverb-diarization-v1 (#1437)
+* Add more models for speaker diarization (#1440)
+* Add Java API example for hotwords. (#1442)
+* Add java android demo (#1454)
+* Add C++ API for streaming ASR. (#1455)
+* Add C++ API for non-streaming ASR (#1456)
+* Handle NaN embeddings in speaker diarization. (#1461)
+* Add speaker identification with VAD and non-streaming ASR using ALSA (#1463)
+* Support GigaAM CTC models for Russian ASR (#1464)
+* Add GigaAM NeMo transducer model for Russian ASR (#1467)
+
+## 1.10.28
+
+* Fix swift example for generating subtitles. (#1362)
+* Allow more online models to load tokens file from the memory (#1352)
+* Fix CI errors introduced by supporting loading keywords from buffers (#1366)
+* Fix running MeloTTS models on GPU. (#1379)
+* Support Parakeet models from NeMo (#1381)
+* Export Pyannote speaker segmentation models to onnx (#1382)
+* Support Agglomerative clustering. (#1384)
+* Add Python API for clustering (#1385)
+* support whisper turbo (#1390)
+* context_state is not set correctly when previous context is passed after reset (#1393)
+* Speaker diarization example with onnxruntime Python API (#1395)
+* C++ API for speaker diarization (#1396)
+* Python API for speaker diarization. (#1400)
+* C API for speaker diarization (#1402)
+* docs(nodejs-addon-examples): add guide for pnpm user (#1401)
+* Go API for speaker diarization (#1403)
+* Swift API for speaker diarization (#1404)
+* Update readme to include more external projects using sherpa-onnx (#1405)
+* C# API for speaker diarization (#1407)
+* JavaScript API (node-addon) for speaker diarization (#1408)
+* WebAssembly exmaple for speaker diarization (#1411)
+* Handle audio files less than 10s long for speaker diarization. (#1412)
+* JavaScript API with WebAssembly for speaker diarization (#1414)
+* Kotlin API for speaker diarization (#1415)
+* Java API for speaker diarization (#1416)
+* Dart API for speaker diarization (#1418)
+* Pascal API for speaker diarization (#1420)
+* Android JNI support for speaker diarization (#1421)
+* Android demo for speaker diarization (#1423)
+
 ## 1.10.27
 
 * Add non-streaming ONNX models for Russian ASR (#1358)
