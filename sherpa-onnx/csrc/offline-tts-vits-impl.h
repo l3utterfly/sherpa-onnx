@@ -156,17 +156,31 @@ class OfflineTtsVitsImpl : public OfflineTtsImpl {
     int32_t num_speakers = meta_data.num_speakers;
 
     if (num_speakers == 0 && sid != 0) {
+#if __OHOS__
+      SHERPA_ONNX_LOGE(
+          "This is a single-speaker model and supports only sid 0. Given sid: "
+          "%{public}d. sid is ignored",
+          static_cast<int32_t>(sid));
+#else
       SHERPA_ONNX_LOGE(
           "This is a single-speaker model and supports only sid 0. Given sid: "
           "%d. sid is ignored",
           static_cast<int32_t>(sid));
+#endif
     }
 
     if (num_speakers != 0 && (sid >= num_speakers || sid < 0)) {
+#if __OHOS__
+      SHERPA_ONNX_LOGE(
+          "This model contains only %{public}d speakers. sid should be in the "
+          "range [%{public}d, %{public}d]. Given: %{public}d. Use sid=0",
+          num_speakers, 0, num_speakers - 1, static_cast<int32_t>(sid));
+#else
       SHERPA_ONNX_LOGE(
           "This model contains only %d speakers. sid should be in the range "
           "[%d, %d]. Given: %d. Use sid=0",
           num_speakers, 0, num_speakers - 1, static_cast<int32_t>(sid));
+#endif
       sid = 0;
     }
 
@@ -334,6 +348,10 @@ class OfflineTtsVitsImpl : public OfflineTtsImpl {
           mgr, config_.model.vits.lexicon, config_.model.vits.tokens,
           config_.model.vits.dict_dir, model_->GetMetaData(),
           config_.model.debug);
+    } else if (meta_data.jieba && !config_.model.vits.dict_dir.empty()) {
+      frontend_ = std::make_unique<JiebaLexicon>(
+          mgr, config_.model.vits.lexicon, config_.model.vits.tokens,
+          config_.model.vits.dict_dir, config_.model.debug);
     } else if (meta_data.is_melo_tts && meta_data.language == "English") {
       frontend_ = std::make_unique<MeloTtsLexicon>(
           mgr, config_.model.vits.lexicon, config_.model.vits.tokens,
@@ -389,8 +407,7 @@ class OfflineTtsVitsImpl : public OfflineTtsImpl {
     } else if (meta_data.jieba && !config_.model.vits.dict_dir.empty()) {
       frontend_ = std::make_unique<JiebaLexicon>(
           config_.model.vits.lexicon, config_.model.vits.tokens,
-          config_.model.vits.dict_dir, model_->GetMetaData(),
-          config_.model.debug);
+          config_.model.vits.dict_dir, config_.model.debug);
     } else if ((meta_data.is_piper || meta_data.is_coqui ||
                 meta_data.is_icefall) &&
                !config_.model.vits.data_dir.empty()) {
@@ -408,17 +425,6 @@ class OfflineTtsVitsImpl : public OfflineTtsImpl {
           config_.model.vits.lexicon, config_.model.vits.tokens,
           meta_data.punctuations, meta_data.language, config_.model.debug);
     }
-  }
-
-  std::vector<int64_t> AddBlank(const std::vector<int64_t> &x) const {
-    // we assume the blank ID is 0
-    std::vector<int64_t> buffer(x.size() * 2 + 1);
-    int32_t i = 1;
-    for (auto k : x) {
-      buffer[i] = k;
-      i += 2;
-    }
-    return buffer;
   }
 
   GeneratedAudio Process(const std::vector<std::vector<int64_t>> &tokens,

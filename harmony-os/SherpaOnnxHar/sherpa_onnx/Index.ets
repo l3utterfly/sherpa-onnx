@@ -1,11 +1,6 @@
 export { listRawfileDir, readWave, readWaveFromBinary, } from "libsherpa_onnx.so";
 
-export { CircularBuffer,
-  SileroVadConfig,
-  SpeechSegment,
-  Vad,
-  VadConfig,
-} from './src/main/ets/components/Vad';
+export { CircularBuffer, SileroVadConfig, SpeechSegment, Vad, VadConfig, } from './src/main/ets/components/Vad';
 
 
 export { Samples,
@@ -36,7 +31,9 @@ export { OnlineStream,
   OnlineRecognizer,
 } from './src/main/ets/components/StreamingAsr';
 
-export { OfflineTtsVitsModelConfig,
+export { OfflineTtsKokoroModelConfig,
+  OfflineTtsMatchaModelConfig,
+  OfflineTtsVitsModelConfig,
   OfflineTtsModelConfig,
   OfflineTtsConfig,
   OfflineTts,
@@ -56,3 +53,8 @@ export { OfflineSpeakerSegmentationPyannoteModelConfig,
   OfflineSpeakerDiarization,
   FastClusteringConfig,
 } from './src/main/ets/components/NonStreamingSpeakerDiarization';
+
+export { KeywordSpotterConfig,
+  KeywordSpotterResult,
+  KeywordSpotter,
+} from './src/main/ets/components/KeywordSpotting';

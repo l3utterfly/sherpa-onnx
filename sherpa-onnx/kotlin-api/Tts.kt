@@ -14,8 +14,29 @@ data class OfflineTtsVitsModelConfig(
     var lengthScale: Float = 1.0f,
 )
 
+data class OfflineTtsMatchaModelConfig(
+    var acousticModel: String = "",
+    var vocoder: String = "",
+    var lexicon: String = "",
+    var tokens: String = "",
+    var dataDir: String = "",
+    var dictDir: String = "",
+    var noiseScale: Float = 1.0f,
+    var lengthScale: Float = 1.0f,
+)
+
+data class OfflineTtsKokoroModelConfig(
+    var model: String = "",
+    var voices: String = "",
+    var tokens: String = "",
+    var dataDir: String = "",
+    var lengthScale: Float = 1.0f,
+)
+
 data class OfflineTtsModelConfig(
     var vits: OfflineTtsVitsModelConfig = OfflineTtsVitsModelConfig(),
+    var matcha: OfflineTtsMatchaModelConfig = OfflineTtsMatchaModelConfig(),
+    var kokoro: OfflineTtsKokoroModelConfig = OfflineTtsKokoroModelConfig(),
     var numThreads: Int = 1,
     var debug: Boolean = false,
     var provider: String = "cpu",
@@ -161,23 +182,89 @@ class OfflineTts(
 // to download models
 fun getOfflineTtsConfig(
     modelDir: String,
-    modelName: String,
+    modelName: String, // for VITS
+    acousticModelName: String, // for Matcha
+    vocoder: String, // for Matcha
+    voices: String, // for Kokoro
     lexicon: String,
     dataDir: String,
     dictDir: String,
     ruleFsts: String,
-    ruleFars: String
+    ruleFars: String,
+    numThreads: Int? = null
 ): OfflineTtsConfig {
+    // For Matcha TTS, please set
+    // acousticModelName, vocoder
+
+    // For Kokoro TTS, please set
+    // modelName, voices
+
+    // For VITS, please set
+    // modelName
+
+    val numberOfThreads = if (numThreads != null) {
+        numThreads
+    } else if (voices.isNotEmpty()) {
+        // for Kokoro TTS models, we use more threads
+        4
+    } else {
+        2
+    }
+
+    if (modelName.isEmpty() && acousticModelName.isEmpty()) {
+        throw IllegalArgumentException("Please specify a TTS model")
+    }
+
+    if (modelName.isNotEmpty() && acousticModelName.isNotEmpty()) {
+        throw IllegalArgumentException("Please specify either a VITS or a Matcha model, but not both")
+    }
+
+    if (acousticModelName.isNotEmpty() && vocoder.isEmpty()) {
+        throw IllegalArgumentException("Please provide vocoder for Matcha TTS")
+    }
+
+    val vits = if (modelName.isNotEmpty() && voices.isEmpty()) {
+        OfflineTtsVitsModelConfig(
+            model = "$modelDir/$modelName",
+            lexicon = "$modelDir/$lexicon",
+            tokens = "$modelDir/tokens.txt",
+            dataDir = dataDir,
+            dictDir = dictDir,
+        )
+    } else {
+        OfflineTtsVitsModelConfig()
+    }
+
+    val matcha = if (acousticModelName.isNotEmpty()) {
+        OfflineTtsMatchaModelConfig(
+            acousticModel = "$modelDir/$acousticModelName",
+            vocoder = vocoder,
+            lexicon = "$modelDir/$lexicon",
+            tokens = "$modelDir/tokens.txt",
+            dictDir = dictDir,
+            dataDir = dataDir,
+        )
+    } else {
+        OfflineTtsMatchaModelConfig()
+    }
+
+    val kokoro = if (voices.isNotEmpty()) {
+        OfflineTtsKokoroModelConfig(
+            model = "$modelDir/$modelName",
+            voices = "$modelDir/$voices",
+            tokens = "$modelDir/tokens.txt",
+            dataDir = dataDir,
+        )
+    } else {
+        OfflineTtsKokoroModelConfig()
+    }
+
     return OfflineTtsConfig(
         model = OfflineTtsModelConfig(
-            vits = OfflineTtsVitsModelConfig(
-                model = "$modelDir/$modelName",
-                lexicon = "$modelDir/$lexicon",
-                tokens = "$modelDir/tokens.txt",
-                dataDir = dataDir,
-                dictDir = dictDir,
-            ),
-            numThreads = 2,
+            vits = vits,
+            matcha = matcha,
+            kokoro = kokoro,
+            numThreads = numberOfThreads,
             debug = true,
             provider = "cpu",
         ),

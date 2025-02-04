@@ -1,3 +1,90 @@
+## 1.10.41
+
+* Fix UI for Android TTS Engine. (#1735)
+* Add iOS TTS example for MatchaTTS (#1736)
+* Add iOS example for Kokoro TTS (#1737)
+* Fix dither binding in Pybind11 to ensure independence from high_freq in FeatureExtractorConfig (#1739)
+* Fix keyword spotting. (#1689)
+* Update readme to include https://github.com/hfyydd/sherpa-onnx-server (#1741)
+* Reduce vad-moonshine-c-api example code. (#1742)
+* Support Kokoro TTS for HarmonyOS. (#1743)
+
+## 1.10.40
+
+* Fix building wheels (#1703)
+* Export kokoro to sherpa-onnx (#1713)
+* Add C++ and Python API for Kokoro TTS models. (#1715)
+* Add C API for Kokoro TTS models (#1717)
+* Fix style issues (#1718)
+* Add C# API for Kokoro TTS models (#1720)
+* Add Swift API for Kokoro TTS models (#1721)
+* Add Go API for Kokoro TTS models (#1722)
+* Add Dart API for Kokoro TTS models (#1723)
+* Add Pascal API for Kokoro TTS models (#1724)
+* Add JavaScript API (node-addon) for Kokoro TTS models (#1725)
+* Add JavaScript (WebAssembly) API for Kokoro TTS models. (#1726)
+* Add Koltin and Java API for Kokoro TTS models (#1728)
+* Update README.md for KWS to not use git lfs. (#1729)
+
+
+
+
+## 1.10.39
+
+* Fix building without TTS (#1691)
+* Add README for android libs. (#1693)
+* Fix: export-onnx.py(expected all tensors to be on the same device) (#1699)
+* Fix passing strings from C# to C. (#1701)
+
+## 1.10.38
+
+* Fix initializing TTS in Python. (#1664)
+* Remove spaces after punctuations for TTS (#1666)
+* Add constructor fromPtr() for all flutter class with factory ctor. (#1667)
+* Add Kotlin API for Matcha-TTS models. (#1668)
+* Support Matcha-TTS models using espeak-ng (#1672)
+* Add Java API for Matcha-TTS models. (#1673)
+* Avoid adding tail padding for VAD in generate-subtitles.py (#1674)
+* Add C API for MatchaTTS models (#1675)
+* Add CXX API for MatchaTTS models (#1676)
+* Add JavaScript API (node-addon-api) for MatchaTTS models. (#1677)
+* Add HarmonyOS examples for MatchaTTS. (#1678)
+* Upgraded to .NET 8 and made code style a little more internally consistent. (#1680)
+* Update workflows to use .NET 8.0 also. (#1681)
+* Add C# and JavaScript (wasm) API for MatchaTTS models (#1682)
+* Add Android demo for MatchaTTS models. (#1683)
+* Add Swift API for MatchaTTS models. (#1684)
+* Add Go API for MatchaTTS models (#1685)
+* Add Pascal API for MatchaTTS models. (#1686)
+* Add Dart API for MatchaTTS models (#1687)
+
+## 1.10.37
+
+* Add new tts models for Latvia and Persian+English (#1644)
+* Add a byte-level BPE Chinese+English non-streaming zipformer model (#1645)
+* Support removing invalid utf-8 sequences. (#1648)
+* Add TeleSpeech CTC to non_streaming_server.py (#1649)
+* Fix building macOS libs (#1656)
+* Add Go API for Keyword spotting (#1662)
+* Add Swift online punctuation (#1661)
+* Add C++ runtime for Matcha-TTS (#1627)
+
+## 1.10.36
+
+* Update AAR version in Android Java demo (#1618)
+* Support linking onnxruntime statically for Android (#1619)
+* Update readme to include Open-LLM-VTuber (#1622)
+* Rename maxNumStences to maxNumSentences (#1625)
+* Support using onnxruntime 1.16.0 with CUDA 11.4 on Jetson Orin NX (Linux arm64 GPU). (#1630)
+* Update readme to include jetson orin nx and nano b01 (#1631)
+* feat: add checksum action (#1632)
+* Support decoding with byte-level BPE (bbpe) models. (#1633)
+* feat: enable c api for android ci (#1635)
+* Update README.md (#1640)
+* SherpaOnnxVadAsr: Offload runSecondPass to background thread for improved real-time audio processing (#1638)
+* Fix GitHub actions. (#1642)
+
+
 ## 1.10.35
 
 * Add missing changes about speaker identfication demo for HarmonyOS (#1612)

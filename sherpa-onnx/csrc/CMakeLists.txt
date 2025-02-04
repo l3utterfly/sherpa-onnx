@@ -151,12 +151,17 @@ list(APPEND sources
 
 if(SHERPA_ONNX_ENABLE_TTS)
   list(APPEND sources
+    hifigan-vocoder.cc
     jieba-lexicon.cc
     lexicon.cc
     melo-tts-lexicon.cc
     offline-tts-character-frontend.cc
     offline-tts-frontend.cc
     offline-tts-impl.cc
+    offline-tts-kokoro-model-config.cc
+    offline-tts-kokoro-model.cc
+    offline-tts-matcha-model-config.cc
+    offline-tts-matcha-model.cc
     offline-tts-model-config.cc
     offline-tts-vits-model-config.cc
     offline-tts-vits-model.cc
@@ -545,6 +550,7 @@ if(SHERPA_ONNX_ENABLE_TESTS)
     pad-sequence-test.cc
     slice-test.cc
     stack-test.cc
+    text-utils-test.cc
     text2token-test.cc
     transpose-test.cc
     unbind-test.cc

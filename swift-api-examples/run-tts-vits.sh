@@ -15,22 +15,22 @@ if [ ! -d ./vits-piper-en_US-amy-low ]; then
   rm vits-piper-en_US-amy-low.tar.bz2
 fi
 
-if [ ! -e ./tts ]; then
+if [ ! -e ./tts-vits ]; then
   # Note: We use -lc++ to link against libc++ instead of libstdc++
   swiftc \
     -lc++ \
     -I ../build-swift-macos/install/include \
     -import-objc-header ./SherpaOnnx-Bridging-Header.h \
-    ./tts.swift  ./SherpaOnnx.swift \
+    ./tts-vits.swift  ./SherpaOnnx.swift \
     -L ../build-swift-macos/install/lib/ \
     -l sherpa-onnx \
     -l onnxruntime \
-    -o tts
+    -o tts-vits
 
-  strip tts
+  strip tts-vits
 else
-  echo "./tts exists - skip building"
+  echo "./tts-vits exists - skip building"
 fi
 
 export DYLD_LIBRARY_PATH=$PWD/../build-swift-macos/install/lib:$DYLD_LIBRARY_PATH
-./tts
+./tts-vits

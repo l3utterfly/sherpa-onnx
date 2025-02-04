@@ -600,7 +600,7 @@ SHERPA_ONNX_API const char *SherpaOnnxGetOfflineStreamResultAsJson(
 SHERPA_ONNX_API void SherpaOnnxDestroyOfflineStreamResultJson(const char *s);
 
 // ============================================================
-// For Keyword Spot
+// For Keyword Spotter
 // ============================================================
 SHERPA_ONNX_API typedef struct SherpaOnnxKeywordResult {
   /// The triggered keyword.
@@ -660,21 +660,21 @@ SHERPA_ONNX_API typedef struct SherpaOnnxKeywordSpotter
 /// @param config  Config for the keyword spotter.
 /// @return Return a pointer to the spotter. The user has to invoke
 ///         SherpaOnnxDestroyKeywordSpotter() to free it to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxKeywordSpotter *SherpaOnnxCreateKeywordSpotter(
+SHERPA_ONNX_API const SherpaOnnxKeywordSpotter *SherpaOnnxCreateKeywordSpotter(
     const SherpaOnnxKeywordSpotterConfig *config);
 
 /// Free a pointer returned by SherpaOnnxCreateKeywordSpotter()
 ///
 /// @param p A pointer returned by SherpaOnnxCreateKeywordSpotter()
 SHERPA_ONNX_API void SherpaOnnxDestroyKeywordSpotter(
-    SherpaOnnxKeywordSpotter *spotter);
+    const SherpaOnnxKeywordSpotter *spotter);
 
 /// Create an online stream for accepting wave samples.
 ///
 /// @param spotter A pointer returned by SherpaOnnxCreateKeywordSpotter()
 /// @return Return a pointer to an OnlineStream. The user has to invoke
 ///         SherpaOnnxDestroyOnlineStream() to free it to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxOnlineStream *SherpaOnnxCreateKeywordStream(
+SHERPA_ONNX_API const SherpaOnnxOnlineStream *SherpaOnnxCreateKeywordStream(
     const SherpaOnnxKeywordSpotter *spotter);
 
 /// Create an online stream for accepting wave samples with the specified hot
@@ -684,7 +684,7 @@ SHERPA_ONNX_API SherpaOnnxOnlineStream *SherpaOnnxCreateKeywordStream(
 /// @param keywords A pointer points to the keywords that you set
 /// @return Return a pointer to an OnlineStream. The user has to invoke
 ///         SherpaOnnxDestroyOnlineStream() to free it to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxOnlineStream *
+SHERPA_ONNX_API const SherpaOnnxOnlineStream *
 SherpaOnnxCreateKeywordStreamWithKeywords(
     const SherpaOnnxKeywordSpotter *spotter, const char *keywords);
 
@@ -693,15 +693,22 @@ SherpaOnnxCreateKeywordStreamWithKeywords(
 ///
 /// @param spotter A pointer returned by SherpaOnnxCreateKeywordSpotter
 /// @param stream  A pointer returned by SherpaOnnxCreateKeywordStream
-SHERPA_ONNX_API int32_t SherpaOnnxIsKeywordStreamReady(
-    SherpaOnnxKeywordSpotter *spotter, SherpaOnnxOnlineStream *stream);
+SHERPA_ONNX_API int32_t
+SherpaOnnxIsKeywordStreamReady(const SherpaOnnxKeywordSpotter *spotter,
+                               const SherpaOnnxOnlineStream *stream);
 
 /// Call this function to run the neural network model and decoding.
 //
 /// Precondition for this function: SherpaOnnxIsKeywordStreamReady() MUST
 /// return 1.
 SHERPA_ONNX_API void SherpaOnnxDecodeKeywordStream(
-    SherpaOnnxKeywordSpotter *spotter, SherpaOnnxOnlineStream *stream);
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream *stream);
+
+/// Please call it right after a keyword is detected
+SHERPA_ONNX_API void SherpaOnnxResetKeywordStream(
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream *stream);
 
 /// This function is similar to SherpaOnnxDecodeKeywordStream(). It decodes
 /// multiple OnlineStream in parallel.
@@ -714,8 +721,8 @@ SHERPA_ONNX_API void SherpaOnnxDecodeKeywordStream(
 ///                 SherpaOnnxCreateKeywordStream()
 /// @param n  Number of elements in the given streams array.
 SHERPA_ONNX_API void SherpaOnnxDecodeMultipleKeywordStreams(
-    SherpaOnnxKeywordSpotter *spotter, SherpaOnnxOnlineStream **streams,
-    int32_t n);
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream **streams, int32_t n);
 
 /// Get the decoding results so far for an OnlineStream.
 ///
@@ -725,7 +732,8 @@ SHERPA_ONNX_API void SherpaOnnxDecodeMultipleKeywordStreams(
 ///         SherpaOnnxDestroyKeywordResult() to free the returned pointer to
 ///         avoid memory leak.
 SHERPA_ONNX_API const SherpaOnnxKeywordResult *SherpaOnnxGetKeywordResult(
-    SherpaOnnxKeywordSpotter *spotter, SherpaOnnxOnlineStream *stream);
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream *stream);
 
 /// Destroy the pointer returned by SherpaOnnxGetKeywordResult().
 ///
@@ -736,7 +744,8 @@ SHERPA_ONNX_API void SherpaOnnxDestroyKeywordResult(
 // the user has to call SherpaOnnxFreeKeywordResultJson() to free the returned
 // pointer to avoid memory leak
 SHERPA_ONNX_API const char *SherpaOnnxGetKeywordResultAsJson(
-    SherpaOnnxKeywordSpotter *spotter, SherpaOnnxOnlineStream *stream);
+    const SherpaOnnxKeywordSpotter *spotter,
+    const SherpaOnnxOnlineStream *stream);
 
 SHERPA_ONNX_API void SherpaOnnxFreeKeywordResultJson(const char *s);
 
@@ -894,15 +903,38 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsVitsModelConfig {
 
   float noise_scale;
   float noise_scale_w;
-  float length_scale;  // < 1, faster in speed; > 1, slower in speed
+  float length_scale;  // < 1, faster in speech speed; > 1, slower in speed
   const char *dict_dir;
 } SherpaOnnxOfflineTtsVitsModelConfig;
+
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsMatchaModelConfig {
+  const char *acoustic_model;
+  const char *vocoder;
+  const char *lexicon;
+  const char *tokens;
+  const char *data_dir;
+
+  float noise_scale;
+  float length_scale;  // < 1, faster in speech speed; > 1, slower in speed
+  const char *dict_dir;
+} SherpaOnnxOfflineTtsMatchaModelConfig;
+
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsKokoroModelConfig {
+  const char *model;
+  const char *voices;
+  const char *tokens;
+  const char *data_dir;
+
+  float length_scale;  // < 1, faster in speech speed; > 1, slower in speed
+} SherpaOnnxOfflineTtsKokoroModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsModelConfig {
   SherpaOnnxOfflineTtsVitsModelConfig vits;
   int32_t num_threads;
   int32_t debug;
   const char *provider;
+  SherpaOnnxOfflineTtsMatchaModelConfig matcha;
+  SherpaOnnxOfflineTtsKokoroModelConfig kokoro;
 } SherpaOnnxOfflineTtsModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsConfig {
@@ -937,11 +969,12 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTts SherpaOnnxOfflineTts;
 
 // Create an instance of offline TTS. The user has to use DestroyOfflineTts()
 // to free the returned pointer to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxOfflineTts *SherpaOnnxCreateOfflineTts(
+SHERPA_ONNX_API const SherpaOnnxOfflineTts *SherpaOnnxCreateOfflineTts(
     const SherpaOnnxOfflineTtsConfig *config);
 
 // Free the pointer returned by SherpaOnnxCreateOfflineTts()
-SHERPA_ONNX_API void SherpaOnnxDestroyOfflineTts(SherpaOnnxOfflineTts *tts);
+SHERPA_ONNX_API void SherpaOnnxDestroyOfflineTts(
+    const SherpaOnnxOfflineTts *tts);
 
 // Return the sample rate of the current TTS object
 SHERPA_ONNX_API int32_t
@@ -971,7 +1004,6 @@ SHERPA_ONNX_API
 const SherpaOnnxGeneratedAudio *
 SherpaOnnxOfflineTtsGenerateWithProgressCallback(
     const SherpaOnnxOfflineTts *tts, const char *text, int32_t sid, float speed,
-
     SherpaOnnxGeneratedAudioProgressCallback callback);
 
 SHERPA_ONNX_API
@@ -1369,6 +1401,41 @@ SHERPA_ONNX_API const char *SherpaOfflinePunctuationAddPunct(
 
 SHERPA_ONNX_API void SherpaOfflinePunctuationFreeText(const char *text);
 
+SHERPA_ONNX_API typedef struct SherpaOnnxOnlinePunctuationModelConfig {
+  const char *cnn_bilstm;
+  const char *bpe_vocab;
+  int32_t num_threads;
+  int32_t debug;
+  const char *provider;
+} SherpaOnnxOnlinePunctuationModelConfig;
+
+SHERPA_ONNX_API typedef struct SherpaOnnxOnlinePunctuationConfig {
+  SherpaOnnxOnlinePunctuationModelConfig model;
+} SherpaOnnxOnlinePunctuationConfig;
+
+SHERPA_ONNX_API typedef struct SherpaOnnxOnlinePunctuation
+    SherpaOnnxOnlinePunctuation;
+
+// Create an online punctuation processor. The user has to invoke
+// SherpaOnnxDestroyOnlinePunctuation() to free the returned pointer
+// to avoid memory leak
+SHERPA_ONNX_API const SherpaOnnxOnlinePunctuation *
+SherpaOnnxCreateOnlinePunctuation(
+    const SherpaOnnxOnlinePunctuationConfig *config);
+
+// Free a pointer returned by SherpaOnnxCreateOnlinePunctuation()
+SHERPA_ONNX_API void SherpaOnnxDestroyOnlinePunctuation(
+    const SherpaOnnxOnlinePunctuation *punctuation);
+
+// Add punctuations to the input text. The user has to invoke
+// SherpaOnnxOnlinePunctuationFreeText() to free the returned pointer
+// to avoid memory leak
+SHERPA_ONNX_API const char *SherpaOnnxOnlinePunctuationAddPunct(
+    const SherpaOnnxOnlinePunctuation *punctuation, const char *text);
+
+// Free a pointer returned by SherpaOnnxOnlinePunctuationAddPunct()
+SHERPA_ONNX_API void SherpaOnnxOnlinePunctuationFreeText(const char *text);
+
 // for resampling
 SHERPA_ONNX_API typedef struct SherpaOnnxLinearResampler
     SherpaOnnxLinearResampler;
@@ -1570,13 +1637,17 @@ SherpaOnnxCreateVoiceActivityDetectorOHOS(
     const SherpaOnnxVadModelConfig *config, float buffer_size_in_seconds,
     NativeResourceManager *mgr);
 
-SHERPA_ONNX_API SherpaOnnxOfflineTts *SherpaOnnxCreateOfflineTtsOHOS(
+SHERPA_ONNX_API const SherpaOnnxOfflineTts *SherpaOnnxCreateOfflineTtsOHOS(
     const SherpaOnnxOfflineTtsConfig *config, NativeResourceManager *mgr);
 
 SHERPA_ONNX_API const SherpaOnnxSpeakerEmbeddingExtractor *
 SherpaOnnxCreateSpeakerEmbeddingExtractorOHOS(
     const SherpaOnnxSpeakerEmbeddingExtractorConfig *config,
     NativeResourceManager *mgr);
+
+SHERPA_ONNX_API const SherpaOnnxKeywordSpotter *
+SherpaOnnxCreateKeywordSpotterOHOS(const SherpaOnnxKeywordSpotterConfig *config,
+                                   NativeResourceManager *mgr);
 
 SHERPA_ONNX_API const SherpaOnnxOfflineSpeakerDiarization *
 SherpaOnnxCreateOfflineSpeakerDiarizationOHOS(
