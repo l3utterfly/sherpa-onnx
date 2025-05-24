@@ -1,4 +1,4 @@
-include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR})
 
 if(NOT DEFINED ANDROID_ABI)
   if(NOT DEFINED ENV{JAVA_HOME})
@@ -16,7 +16,9 @@ set(sources
   keyword-spotter.cc
   offline-punctuation.cc
   offline-recognizer.cc
+  offline-speech-denoiser.cc
   offline-stream.cc
+  online-punctuation.cc
   online-recognizer.cc
   online-stream.cc
   speaker-embedding-extractor.cc

@@ -121,7 +121,7 @@ AudioTaggingCreateOfflineStreamWrapper(const Napi::CallbackInfo &info) {
     return {};
   }
 
-  SherpaOnnxAudioTagging *at =
+  const SherpaOnnxAudioTagging *at =
       info[0].As<Napi::External<SherpaOnnxAudioTagging>>().Data();
 
   const SherpaOnnxOfflineStream *stream =
@@ -169,10 +169,10 @@ static Napi::Object AudioTaggingComputeWrapper(const Napi::CallbackInfo &info) {
     return {};
   }
 
-  SherpaOnnxAudioTagging *at =
+  const SherpaOnnxAudioTagging *at =
       info[0].As<Napi::External<SherpaOnnxAudioTagging>>().Data();
 
-  SherpaOnnxOfflineStream *stream =
+  const SherpaOnnxOfflineStream *stream =
       info[1].As<Napi::External<SherpaOnnxOfflineStream>>().Data();
 
   int32_t top_k = info[2].As<Napi::Number>().Int32Value();
@@ -196,7 +196,8 @@ static Napi::Object AudioTaggingComputeWrapper(const Napi::CallbackInfo &info) {
             Napi::Number::New(env, events[i]->index));
     obj.Set(Napi::String::New(env, "prob"),
             Napi::Number::New(env, events[i]->prob));
-    ans[i] = obj;
+    // ans[i] = obj; // see #2120
+    ans.Set(i, obj);
   }
 
   SherpaOnnxAudioTaggingFreeResults(events);

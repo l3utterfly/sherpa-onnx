@@ -87,6 +87,7 @@ function testOnlineAsr() {
   kotlinc-jvm -include-runtime -d $out_filename \
     test_online_asr.kt \
     FeatureConfig.kt \
+    HomophoneReplacerConfig.kt \
     OnlineRecognizer.kt \
     OnlineStream.kt \
     WaveReader.kt \
@@ -111,8 +112,14 @@ function testTts() {
     rm matcha-icefall-zh-baker.tar.bz2
   fi
 
-  if [ ! -f ./hifigan_v2.onnx ]; then
-    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_v2.onnx
+  if [ ! -f ./vocos-22khz-univ.onnx ]; then
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
+  fi
+
+  if [ ! -f ./kokoro-multi-lang-v1_0/model.onnx ]; then
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2
+    tar xf kokoro-multi-lang-v1_0.tar.bz2
+    rm kokoro-multi-lang-v1_0.tar.bz2
   fi
 
   if [ ! -f ./kokoro-en-v0_19/model.onnx ]; then
@@ -184,6 +191,20 @@ function testSpokenLanguageIdentification() {
 }
 
 function testOfflineAsr() {
+  if [ ! -f ./sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02/model.int8.onnx ]; then
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+    tar xvf sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+    rm sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+    ls -lh sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02
+  fi
+
+  if [ ! -f ./sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16/encoder.int8.onnx ]; then
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+    tar xvf sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+    rm sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+    ls -lh sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16
+  fi
+
   if [ ! -f ./sherpa-onnx-moonshine-tiny-en-int8/tokens.txt ]; then
     curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
     tar xvf sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
@@ -224,6 +245,7 @@ function testOfflineAsr() {
   kotlinc-jvm -include-runtime -d $out_filename \
     test_offline_asr.kt \
     FeatureConfig.kt \
+    HomophoneReplacerConfig.kt \
     OfflineRecognizer.kt \
     OfflineStream.kt \
     WaveReader.kt \
@@ -252,6 +274,7 @@ function testInverseTextNormalizationOfflineAsr() {
   kotlinc-jvm -include-runtime -d $out_filename \
     test_itn_offline_asr.kt \
     FeatureConfig.kt \
+    HomophoneReplacerConfig.kt \
     OfflineRecognizer.kt \
     OfflineStream.kt \
     WaveReader.kt \
@@ -280,6 +303,7 @@ function testInverseTextNormalizationOnlineAsr() {
   kotlinc-jvm -include-runtime -d $out_filename \
     test_itn_online_asr.kt \
     FeatureConfig.kt \
+    HomophoneReplacerConfig.kt \
     OnlineRecognizer.kt \
     OnlineStream.kt \
     WaveReader.kt \
@@ -289,17 +313,36 @@ function testInverseTextNormalizationOnlineAsr() {
   java -Djava.library.path=../build/lib -jar $out_filename
 }
 
-function testPunctuation() {
+function testOfflinePunctuation() {
   if [ ! -f ./sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12/model.onnx ]; then
     curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/punctuation-models/sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12.tar.bz2
     tar xvf sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12.tar.bz2
     rm sherpa-onnx-punct-ct-transformer-zh-en-vocab272727-2024-04-12.tar.bz2
   fi
 
-  out_filename=test_punctuation.jar
+  out_filename=test_offline_punctuation.jar
   kotlinc-jvm -include-runtime -d $out_filename \
-    ./test_punctuation.kt \
+    ./test_offline_punctuation.kt \
     ./OfflinePunctuation.kt \
+    faked-asset-manager.kt \
+    faked-log.kt
+
+  ls -lh $out_filename
+
+  java -Djava.library.path=../build/lib -jar $out_filename
+}
+
+function testOnlinePunctuation() {
+  if [ ! -f ./sherpa-onnx-online-punct-en-2024-08-06/model.int8.onnx ]; then
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/punctuation-models/sherpa-onnx-online-punct-en-2024-08-06.tar.bz2
+    tar xvf sherpa-onnx-online-punct-en-2024-08-06.tar.bz2
+    rm sherpa-onnx-online-punct-en-2024-08-06.tar.bz2
+  fi
+
+  out_filename=test_online_punctuation.jar
+  kotlinc-jvm -include-runtime -d $out_filename \
+    ./test_online_punctuation.kt \
+    ./OnlinePunctuation.kt \
     faked-asset-manager.kt \
     faked-log.kt
 
@@ -339,6 +382,63 @@ function testOfflineSpeakerDiarization() {
   java -Djava.library.path=../build/lib -jar $out_filename
 }
 
+function testOfflineSpeechDenoiser() {
+  if [ ! -f ./gtcrn_simple.onnx ]; then
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/gtcrn_simple.onnx
+  fi
+
+  if [ ! -f ./inp_16k.wav ]; then
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/inp_16k.wav
+  fi
+
+  out_filename=test_offline_speech_denoiser.jar
+  kotlinc-jvm -include-runtime -d $out_filename \
+    test_offline_speech_denoiser.kt \
+    OfflineSpeechDenoiser.kt \
+    WaveReader.kt \
+    faked-asset-manager.kt \
+    faked-log.kt
+
+  ls -lh $out_filename
+
+  java -Djava.library.path=../build/lib -jar $out_filename
+
+  ls -lh *.wav
+}
+
+function testOfflineSenseVoiceWithHr() {
+  if [ ! -f ./sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/tokens.txt ]; then
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+    tar xvf sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+    rm sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+  fi
+
+  if [ ! -d dict ]; then
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/dict.tar.bz2
+    tar xf dict.tar.bz2
+    rm dict.tar.bz2
+
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/replace.fst
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/test-hr.wav
+    curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/lexicon.txt
+  fi
+
+  out_filename=test_offline_sense_voice_with_hr.jar
+  kotlinc-jvm -include-runtime -d $out_filename \
+    test_offline_sense_voice_with_hr.kt \
+    FeatureConfig.kt \
+    HomophoneReplacerConfig.kt \
+    OfflineRecognizer.kt \
+    OfflineStream.kt \
+    WaveReader.kt \
+    faked-asset-manager.kt
+
+  ls -lh $out_filename
+  java -Djava.library.path=../build/lib -jar $out_filename
+}
+
+testOfflineSenseVoiceWithHr
+testOfflineSpeechDenoiser
 testOfflineSpeakerDiarization
 testSpeakerEmbeddingExtractor
 testOnlineAsr
@@ -346,6 +446,7 @@ testTts
 testAudioTagging
 testSpokenLanguageIdentification
 testOfflineAsr
-testPunctuation
+testOfflinePunctuation
+testOnlinePunctuation
 testInverseTextNormalizationOfflineAsr
 testInverseTextNormalizationOnlineAsr

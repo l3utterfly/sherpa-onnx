@@ -25,27 +25,28 @@ int32_t main() {
 
   memset(&config, 0, sizeof(config));
   config.model_config.transducer.encoder =
-      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01/"
-      "encoder-epoch-12-avg-2-chunk-16-left-64.onnx";
+      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01-mobile/"
+      "encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx";
 
   config.model_config.transducer.decoder =
-      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01/"
+      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01-mobile/"
       "decoder-epoch-12-avg-2-chunk-16-left-64.onnx";
 
   config.model_config.transducer.joiner =
-      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01/"
-      "joiner-epoch-12-avg-2-chunk-16-left-64.onnx";
+      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01-mobile/"
+      "joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx";
 
   config.model_config.tokens =
-      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01/tokens.txt";
+      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01-mobile/"
+      "tokens.txt";
 
   config.model_config.provider = "cpu";
   config.model_config.num_threads = 1;
   config.model_config.debug = 1;
 
   config.keywords_file =
-      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01/test_wavs/"
-      "test_keywords.txt";
+      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01-mobile/"
+      "test_wavs/test_keywords.txt";
 
   const SherpaOnnxKeywordSpotter *kws = SherpaOnnxCreateKeywordSpotter(&config);
   if (!kws) {
@@ -57,7 +58,8 @@ int32_t main() {
           "--Test pre-defined keywords from test_wavs/test_keywords.txt--\n");
 
   const char *wav_filename =
-      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01/test_wavs/3.wav";
+      "./sherpa-onnx-kws-zipformer-wenetspeech-3.3M-2024-01-01-mobile/"
+      "test_wavs/3.wav";
 
   float tail_paddings[8000] = {0};  // 0.5 seconds
 

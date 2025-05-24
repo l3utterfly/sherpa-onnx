@@ -25,6 +25,8 @@ namespace SherpaOnnx
             TeleSpeechCtc = "";
             SenseVoice = new OfflineSenseVoiceModelConfig();
             Moonshine = new OfflineMoonshineModelConfig();
+            FireRedAsr = new OfflineFireRedAsrModelConfig();
+            Dolphin = new OfflineDolphinModelConfig();
         }
         public OfflineTransducerModelConfig Transducer;
         public OfflineParaformerModelConfig Paraformer;
@@ -56,5 +58,7 @@ namespace SherpaOnnx
 
         public OfflineSenseVoiceModelConfig SenseVoice;
         public OfflineMoonshineModelConfig Moonshine;
+        public OfflineFireRedAsrModelConfig FireRedAsr;
+        public OfflineDolphinModelConfig Dolphin;
     }
 }

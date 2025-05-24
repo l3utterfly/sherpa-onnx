@@ -30,6 +30,8 @@ data class OfflineTtsKokoroModelConfig(
     var voices: String = "",
     var tokens: String = "",
     var dataDir: String = "",
+    var lexicon: String = "",
+    var dictDir: String = "",
     var lengthScale: Float = 1.0f,
 )
 
@@ -47,6 +49,7 @@ data class OfflineTtsConfig(
     var ruleFsts: String = "",
     var ruleFars: String = "",
     var maxNumSentences: Int = 1,
+    var silenceScale: Float = 0.2f,
 )
 
 class GeneratedAudio(
@@ -254,6 +257,12 @@ fun getOfflineTtsConfig(
             voices = "$modelDir/$voices",
             tokens = "$modelDir/tokens.txt",
             dataDir = dataDir,
+            lexicon = when {
+                lexicon == "" -> lexicon
+                "," in lexicon -> lexicon
+                else -> "$modelDir/$lexicon"
+            },
+            dictDir = dictDir,
         )
     } else {
         OfflineTtsKokoroModelConfig()

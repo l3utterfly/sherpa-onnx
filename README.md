@@ -12,9 +12,9 @@
 |--------------------------------|---------------|--------------------------|
 |                 ✔️              |          ✔️    |                ✔️         |
 
-| Keyword spotting | Add punctuation |
-|------------------|-----------------|
-|     ✔️            |       ✔️         |
+| Keyword spotting | Add punctuation | Speech enhancement |
+|------------------|-----------------|--------------------|
+|     ✔️            |       ✔️         |      ✔️             |
 
 ### Supported platforms
 
@@ -60,7 +60,7 @@ This repository supports running the following functions **locally**
 
 on the following platforms and operating systems:
 
-  - x86, ``x86_64``, 32-bit ARM, 64-bit ARM (arm64, aarch64), RISC-V (riscv64)
+  - x86, ``x86_64``, 32-bit ARM, 64-bit ARM (arm64, aarch64), RISC-V (riscv64), **RK NPU**
   - Linux, macOS, Windows, openKylin
   - Android, WearOS
   - iOS
@@ -119,6 +119,7 @@ We also have spaces built using WebAssembly. They are listed below:
 |VAD + speech recognition (Chinese 多种方言) with a [TeleSpeech-ASR][TeleSpeech-ASR] CTC model|[Click me][wasm-hf-vad-asr-zh-telespeech]| [地址][wasm-ms-vad-asr-zh-telespeech]|
 |VAD + speech recognition (English + Chinese, 及多种中文方言) with Paraformer-large          |[Click me][wasm-hf-vad-asr-zh-en-paraformer-large]| [地址][wasm-ms-vad-asr-zh-en-paraformer-large]|
 |VAD + speech recognition (English + Chinese, 及多种中文方言) with Paraformer-small          |[Click me][wasm-hf-vad-asr-zh-en-paraformer-small]| [地址][wasm-ms-vad-asr-zh-en-paraformer-small]|
+|VAD + speech recognition (多语种及多种中文方言) with [Dolphin][Dolphin]-base          |[Click me][wasm-hf-vad-asr-multi-lang-dolphin-base]| [地址][wasm-ms-vad-asr-multi-lang-dolphin-base]|
 |Speech synthesis (English)                                                                  |[Click me][wasm-hf-tts-piper-en]| [地址][wasm-ms-tts-piper-en]|
 |Speech synthesis (German)                                                                   |[Click me][wasm-hf-tts-piper-de]| [地址][wasm-ms-tts-piper-de]|
 |Speaker diarization                                                                         |[Click me][wasm-hf-speaker-diarization]|[地址][wasm-ms-speaker-diarization]|
@@ -198,6 +199,7 @@ We also have spaces built using WebAssembly. They are listed below:
 | Spoken language identification (Language ID)| See multi-lingual [Whisper][Whisper] ASR models from  [Speech recognition][asr-models]|
 | Punctuation                                 | [Address][punct-models]                                                               |
 | Speaker segmentation                        | [Address][speaker-segmentation-models]                                                |
+| Speech enhancement                          | [Address][speech-enhancement-models]                                                  |
 
 </details>
 
@@ -309,6 +311,48 @@ It uses QT. Both [ASR](https://github.com/xinhecuican/QSmartAssistant/blob/maste
 and [TTS](https://github.com/xinhecuican/QSmartAssistant/blob/master/doc/%E5%AE%89%E8%A3%85.md#tts)
 are used.
 
+### [Flutter-EasySpeechRecognition](https://github.com/Jason-chen-coder/Flutter-EasySpeechRecognition)
+
+It extends [./flutter-examples/streaming_asr](./flutter-examples/streaming_asr) by
+downloading models inside the app to reduce the size of the app.
+
+Note: [[Team B] Sherpa AI backend](https://github.com/umgc/spring2025/pull/82) also uses
+sherpa-onnx in a Flutter APP.
+
+### [sherpa-onnx-unity](https://github.com/xue-fei/sherpa-onnx-unity)
+
+sherpa-onnx in Unity. See also [#1695](https://github.com/k2-fsa/sherpa-onnx/issues/1695),
+[#1892](https://github.com/k2-fsa/sherpa-onnx/issues/1892), and [#1859](https://github.com/k2-fsa/sherpa-onnx/issues/1859)
+
+### [xiaozhi-esp32-server](https://github.com/xinnan-tech/xiaozhi-esp32-server)
+
+本项目为xiaozhi-esp32提供后端服务，帮助您快速搭建ESP32设备控制服务器
+Backend service for xiaozhi-esp32, helps you quickly build an ESP32 device control server.
+
+See also
+
+  - [ASR新增轻量级sherpa-onnx-asr](https://github.com/xinnan-tech/xiaozhi-esp32-server/issues/315)
+  - [feat: ASR增加sherpa-onnx模型](https://github.com/xinnan-tech/xiaozhi-esp32-server/pull/379)
+
+### [KaithemAutomation](https://github.com/EternityForest/KaithemAutomation)
+
+Pure Python, GUI-focused home automation/consumer grade SCADA.
+
+It uses TTS from sherpa-onnx. See also [✨ Speak command that uses the new globally configured TTS model.](https://github.com/EternityForest/KaithemAutomation/commit/8e64d2b138725e426532f7d66bb69dd0b4f53693)
+
+### [Open-XiaoAI KWS](https://github.com/idootop/open-xiaoai-kws)
+
+Enable custom wake word for XiaoAi Speakers. 让小爱音箱支持自定义唤醒词。
+
+Video demo in Chinese: [小爱同学启动～˶╹ꇴ╹˶！](https://www.bilibili.com/video/BV1YfVUz5EMj)
+
+### [Making robot Paimon, Ep10 "The AI Part 1"](https://www.youtube.com/watch?v=KxPKkwxGWZs)
+
+It is a [YouTube video](https://www.youtube.com/watch?v=KxPKkwxGWZs),
+showing how the author tried to use AI so he can have a conversation with Paimon.
+
+It uses sherpa-onnx for speech-to-text and text-to-speech.
+![](https://private-user-images.githubusercontent.com/5284924/442579664-f6eea2d5-1807-42cb-9160-be8da2971e1f.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDcwMjI5NjIsIm5iZiI6MTc0NzAyMjY2MiwicGF0aCI6Ii81Mjg0OTI0LzQ0MjU3OTY2NC1mNmVlYTJkNS0xODA3LTQyY2ItOTE2MC1iZThkYTI5NzFlMWYucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MDUxMiUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTA1MTJUMDQwNDIyWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9ODAyMDllYjNmMGU0ZjNlODI3N2RkZjdiYjU2MmY4YzQwNGJjZjM4MGZmNjk0OWRmNmYzMjJhYWIzMDRiMWNiYSZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.WP-v8oKPqQ-s487-eUU2Z4quOfWbwDJQJok89NfkTf4)
 
 [sherpa-rs]: https://github.com/thewh1teagle/sherpa-rs
 [silero-vad]: https://github.com/snakers4/silero-vad
@@ -361,6 +405,10 @@ are used.
 [wasm-ms-vad-asr-zh-en-paraformer-large]: https://www.modelscope.cn/studios/k2-fsa/web-assembly-vad-asr-sherpa-onnx-zh-en-paraformer
 [wasm-hf-vad-asr-zh-en-paraformer-small]: https://huggingface.co/spaces/k2-fsa/web-assembly-vad-asr-sherpa-onnx-zh-en-paraformer-small
 [wasm-ms-vad-asr-zh-en-paraformer-small]: https://www.modelscope.cn/studios/k2-fsa/web-assembly-vad-asr-sherpa-onnx-zh-en-paraformer-small
+[Dolphin]: https://github.com/DataoceanAI/Dolphin
+[wasm-ms-vad-asr-multi-lang-dolphin-base]: https://modelscope.cn/studios/csukuangfj/web-assembly-vad-asr-sherpa-onnx-multi-lang-dophin-ctc
+[wasm-hf-vad-asr-multi-lang-dolphin-base]: https://huggingface.co/spaces/k2-fsa/web-assembly-vad-asr-sherpa-onnx-multi-lang-dophin-ctc
+
 [wasm-hf-tts-piper-en]: https://huggingface.co/spaces/k2-fsa/web-assembly-tts-sherpa-onnx-en
 [wasm-ms-tts-piper-en]: https://modelscope.cn/studios/k2-fsa/web-assembly-tts-sherpa-onnx-en
 [wasm-hf-tts-piper-de]: https://huggingface.co/spaces/k2-fsa/web-assembly-tts-sherpa-onnx-de
@@ -432,3 +480,4 @@ are used.
 [Moonshine tiny]: https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-moonshine-tiny-en-int8.tar.bz2
 [NVIDIA Jetson Orin NX]: https://developer.download.nvidia.com/assets/embedded/secure/jetson/orin_nx/docs/Jetson_Orin_NX_DS-10712-001_v0.5.pdf?RCPGu9Q6OVAOv7a7vgtwc9-BLScXRIWq6cSLuditMALECJ_dOj27DgnqAPGVnT2VpiNpQan9SyFy-9zRykR58CokzbXwjSA7Gj819e91AXPrWkGZR3oS1VLxiDEpJa_Y0lr7UT-N4GnXtb8NlUkP4GkCkkF_FQivGPrAucCUywL481GH_WpP_p7ziHU1Wg==&t=eyJscyI6ImdzZW8iLCJsc2QiOiJodHRwczovL3d3dy5nb29nbGUuY29tLmhrLyJ9
 [NVIDIA Jetson Nano B01]: https://www.seeedstudio.com/blog/2020/01/16/new-revision-of-jetson-nano-dev-kit-now-supports-new-jetson-nano-module/
+[speech-enhancement-models]: https://github.com/k2-fsa/sherpa-onnx/releases/tag/speech-enhancement-models

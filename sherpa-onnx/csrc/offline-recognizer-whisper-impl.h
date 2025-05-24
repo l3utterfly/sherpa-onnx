@@ -23,28 +23,6 @@
 
 namespace sherpa_onnx {
 
-static OfflineRecognitionResult Convert(const OfflineWhisperDecoderResult &src,
-                                        const SymbolTable &sym_table) {
-  OfflineRecognitionResult r;
-  r.tokens.reserve(src.tokens.size());
-
-  std::string text;
-  for (auto i : src.tokens) {
-    if (!sym_table.Contains(i)) {
-      continue;
-    }
-
-    const auto &s = sym_table[i];
-    text += s;
-    r.tokens.push_back(s);
-  }
-
-  r.text = text;
-  r.lang = src.lang;
-
-  return r;
-}
-
 class OfflineRecognizerWhisperImpl : public OfflineRecognizerImpl {
  public:
   explicit OfflineRecognizerWhisperImpl(const OfflineRecognizerConfig &config)
@@ -153,10 +131,9 @@ class OfflineRecognizerWhisperImpl : public OfflineRecognizerImpl {
       auto cross_kv = model_->ForwardEncoder(std::move(mel));
 
       auto results = decoder_->Decode(std::move(cross_kv.first),
-                                      std::move(cross_kv.second));
+                                      std::move(cross_kv.second), num_frames);
 
       auto r = Convert(results[0], symbol_table_);
-      r.text = ApplyInverseTextNormalization(std::move(r.text));
       s->SetResult(r);
     } catch (const Ort::Exception &ex) {
       SHERPA_ONNX_LOGE(
@@ -167,6 +144,32 @@ class OfflineRecognizerWhisperImpl : public OfflineRecognizerImpl {
           ex.what(), num_frames, tail_padding_frames);
       return;
     }
+  }
+
+ private:
+  OfflineRecognitionResult Convert(const OfflineWhisperDecoderResult &src,
+                                   const SymbolTable &sym_table) const {
+    OfflineRecognitionResult r;
+    r.tokens.reserve(src.tokens.size());
+
+    std::string text;
+    for (auto i : src.tokens) {
+      if (!sym_table.Contains(i)) {
+        continue;
+      }
+
+      std::string s = sym_table[i];
+      s = ApplyInverseTextNormalization(s);
+      s = ApplyHomophoneReplacer(std::move(s));
+
+      text += s;
+      r.tokens.push_back(s);
+    }
+
+    r.text = text;
+    r.lang = src.lang;
+
+    return r;
   }
 
  private:

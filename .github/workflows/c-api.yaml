@@ -35,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, ubuntu-22.04-arm]
 
     steps:
       - uses: actions/checkout@v4
@@ -69,7 +69,7 @@ jobs:
           ls -lh install/lib
           ls -lh install/include
 
-          if [[ ${{ matrix.os }} == ubuntu-latest ]]; then
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
             ldd ./install/lib/libsherpa-onnx-c-api.so
             echo "---"
             readelf -d ./install/lib/libsherpa-onnx-c-api.so
@@ -78,6 +78,146 @@ jobs:
           if [[ ${{ matrix.os }} == macos-latest ]]; then
             otool -L ./install/lib/libsherpa-onnx-c-api.dylib
           fi
+
+      - name: Test streaming zipformer with homophone replacer
+        shell: bash
+        run: |
+          name=streaming-zipformer-with-hr-c-api
+          gcc -o $name ./c-api-examples/$name.c \
+            -I ./build/install/include \
+            -L ./build/install/lib/ \
+            -l sherpa-onnx-c-api \
+            -l onnxruntime
+
+          ls -lh $name
+
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
+            ldd ./$name
+            echo "----"
+            readelf -d ./$name
+          fi
+
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2
+          tar xvf sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2
+          rm sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2
+
+          ls -lh sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20
+          echo "---"
+
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/dict.tar.bz2
+          tar xf dict.tar.bz2
+          rm dict.tar.bz2
+
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/replace.fst
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/test-hr.wav
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/lexicon.txt
+
+          export LD_LIBRARY_PATH=$PWD/build/install/lib:$LD_LIBRARY_PATH
+          export DYLD_LIBRARY_PATH=$PWD/build/install/lib:$DYLD_LIBRARY_PATH
+
+          ./$name
+
+          rm -rf sherpa-onnx-streaming-zipformer-*
+          rm -rf dict lexicon.txt test-hr.wav replace.fst
+          rm -v $name
+
+      - name: Test Dolphin CTC
+        shell: bash
+        run: |
+          name=dolphin-ctc-c-api
+          gcc -o $name ./c-api-examples/$name.c \
+            -I ./build/install/include \
+            -L ./build/install/lib/ \
+            -l sherpa-onnx-c-api \
+            -l onnxruntime
+
+          ls -lh $name
+
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
+            ldd ./$name
+            echo "----"
+            readelf -d ./$name
+          fi
+
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+          tar xvf sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+          rm sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+
+          export LD_LIBRARY_PATH=$PWD/build/install/lib:$LD_LIBRARY_PATH
+          export DYLD_LIBRARY_PATH=$PWD/build/install/lib:$DYLD_LIBRARY_PATH
+
+          ./$name
+
+          rm $name
+          rm -rf sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02
+
+      - name: Test speech enhancement (GTCRN)
+        shell: bash
+        run: |
+          name=speech-enhancement-gtcrn-c-api
+          gcc -o $name ./c-api-examples/$name.c \
+            -I ./build/install/include \
+            -L ./build/install/lib/ \
+            -l sherpa-onnx-c-api \
+            -l onnxruntime
+
+          ls -lh $name
+
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
+            ldd ./$name
+            echo "----"
+            readelf -d ./$name
+          fi
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/gtcrn_simple.onnx
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/inp_16k.wav
+
+          export LD_LIBRARY_PATH=$PWD/build/install/lib:$LD_LIBRARY_PATH
+          export DYLD_LIBRARY_PATH=$PWD/build/install/lib:$DYLD_LIBRARY_PATH
+
+          ./$name
+          rm -fv *.onnx
+          mkdir denoised-wavs
+          cp -v inp_16k.wav denoised-wavs
+          cp -v enhanced_16k.wav denoised-wavs
+
+          rm $name
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: denoised-wavs-${{ matrix.os }}
+          path: ./denoised-wavs/*.wav
+
+      - name: Test FireRedAsr
+        shell: bash
+        run: |
+          gcc -o fire-red-asr-c-api ./c-api-examples/fire-red-asr-c-api.c \
+            -I ./build/install/include \
+            -L ./build/install/lib/ \
+            -l sherpa-onnx-c-api \
+            -l onnxruntime
+
+          ls -lh fire-red-asr-c-api
+
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
+            ldd ./fire-red-asr-c-api
+            echo "----"
+            readelf -d ./fire-red-asr-c-api
+          fi
+
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+          tar xvf sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+          rm sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+
+          ls -lh sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16
+          echo "---"
+          ls -lh sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16/test_wavs
+
+          export LD_LIBRARY_PATH=$PWD/build/install/lib:$LD_LIBRARY_PATH
+          export DYLD_LIBRARY_PATH=$PWD/build/install/lib:$DYLD_LIBRARY_PATH
+
+          ./fire-red-asr-c-api
+
+          rm -rf sherpa-onnx-fire-red-asr-*
 
       - name: Test kws (zh)
         shell: bash
@@ -99,6 +239,27 @@ jobs:
 
           rm ./kws-c-api
           rm -rf sherpa-onnx-kws-*
+
+      - name: Test Kokoro TTS (zh+en)
+        shell: bash
+        run: |
+          gcc -o kokoro-tts-zh-en-c-api ./c-api-examples/kokoro-tts-zh-en-c-api.c \
+            -I ./build/install/include \
+            -L ./build/install/lib/ \
+            -l sherpa-onnx-c-api \
+            -l onnxruntime
+
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2
+          tar xf kokoro-multi-lang-v1_0.tar.bz2
+          rm kokoro-multi-lang-v1_0.tar.bz2
+
+          export LD_LIBRARY_PATH=$PWD/build/install/lib:$LD_LIBRARY_PATH
+          export DYLD_LIBRARY_PATH=$PWD/build/install/lib:$DYLD_LIBRARY_PATH
+
+          ./kokoro-tts-zh-en-c-api
+
+          rm ./kokoro-tts-zh-en-c-api
+          rm -rf kokoro-zh-en-*
 
       - name: Test Kokoro TTS (en)
         shell: bash
@@ -139,7 +300,7 @@ jobs:
           tar xvf matcha-icefall-zh-baker.tar.bz2
           rm matcha-icefall-zh-baker.tar.bz2
 
-          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_v2.onnx
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
 
           export LD_LIBRARY_PATH=$PWD/build/install/lib:$LD_LIBRARY_PATH
           export DYLD_LIBRARY_PATH=$PWD/build/install/lib:$DYLD_LIBRARY_PATH
@@ -148,7 +309,7 @@ jobs:
 
           rm ./matcha-tts-zh-c-api
           rm -rf matcha-icefall-*
-          rm hifigan_v2.onnx
+          rm vocos-22khz-univ.onnx
 
       - name: Test Matcha TTS (en)
         shell: bash
@@ -163,7 +324,7 @@ jobs:
           tar xvf matcha-icefall-en_US-ljspeech.tar.bz2
           rm matcha-icefall-en_US-ljspeech.tar.bz2
 
-          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_v2.onnx
+          curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
 
           export LD_LIBRARY_PATH=$PWD/build/install/lib:$LD_LIBRARY_PATH
           export DYLD_LIBRARY_PATH=$PWD/build/install/lib:$DYLD_LIBRARY_PATH
@@ -172,7 +333,7 @@ jobs:
 
           rm ./matcha-tts-en-c-api
           rm -rf matcha-icefall-*
-          rm hifigan_v2.onnx
+          rm vocos-22khz-univ.onnx
 
       - uses: actions/upload-artifact@v4
         with:
@@ -280,7 +441,7 @@ jobs:
 
           ls -lh vad-sense-voice-c-api
 
-          if [[ ${{ matrix.os }} == ubuntu-latest ]]; then
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
             ldd ./vad-sense-voice-c-api
             echo "----"
             readelf -d ./vad-sense-voice-c-api
@@ -319,7 +480,7 @@ jobs:
 
           ls -lh sense-voice-c-api
 
-          if [[ ${{ matrix.os }} == ubuntu-latest ]]; then
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
             ldd ./sense-voice-c-api
             echo "----"
             readelf -d ./sense-voice-c-api
@@ -352,7 +513,7 @@ jobs:
 
           ls -lh whisper-c-api
 
-          if [[ ${{ matrix.os }} == ubuntu-latest ]]; then
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
             ldd ./whisper-c-api
             echo "----"
             readelf -d ./whisper-c-api
@@ -384,7 +545,7 @@ jobs:
 
           ls -lh zipformer-c-api
 
-          if [[ ${{ matrix.os }} == ubuntu-latest ]]; then
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
             ldd ./zipformer-c-api
             echo "----"
             readelf -d ./zipformer-c-api
@@ -416,7 +577,7 @@ jobs:
 
           ls -lh streaming-zipformer-c-api
 
-          if [[ ${{ matrix.os }} == ubuntu-latest ]]; then
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
             ldd ./streaming-zipformer-c-api
             echo "----"
             readelf -d ./streaming-zipformer-c-api
@@ -448,7 +609,7 @@ jobs:
 
           ls -lh paraformer-c-api
 
-          if [[ ${{ matrix.os }} == ubuntu-latest ]]; then
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
             ldd ./paraformer-c-api
             echo "----"
             readelf -d ./paraformer-c-api
@@ -480,7 +641,7 @@ jobs:
 
           ls -lh streaming-paraformer-c-api
 
-          if [[ ${{ matrix.os }} == ubuntu-latest ]]; then
+          if [[ ${{ matrix.os }} == ubuntu-latest || ${{ matrix.os }} == ubuntu-22.04-arm ]]; then
             ldd ./streaming-paraformer-c-api
             echo "----"
             readelf -d ./streaming-paraformer-c-api

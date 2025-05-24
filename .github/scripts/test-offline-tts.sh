@@ -44,17 +44,41 @@ done
 rm -rf kokoro-en-v0_19
 
 log "------------------------------------------------------------"
+log "matcha-tts-fa_en-musa"
+log "------------------------------------------------------------"
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/matcha-tts-fa_en-musa.tar.bz2
+tar xvf matcha-tts-fa_en-musa.tar.bz2
+rm matcha-tts-fa_en-musa.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
+
+
+$EXE \
+  --matcha-acoustic-model=./matcha-tts-fa_en-musa/model.onnx \
+  --matcha-vocoder=./vocos-22khz-univ.onnx \
+  --matcha-tokens=./matcha-tts-fa_en-musa/tokens.txt \
+  --matcha-data-dir=./matcha-tts-fa_en-musa/espeak-ng-data \
+  --output-filename=./tts/test-matcha-fa-en-musa.wav \
+  --num-threads=2 \
+  "How are you doing today?  این یک نمونه ی تست فارسی است. This is a test."
+
+rm -rf matcha-tts-fa_en-musa
+rm vocos-22khz-univ.onnx
+ls -lh tts/*.wav
+
+log "------------------------------------------------------------"
 log "matcha-icefall-en_US-ljspeech"
 log "------------------------------------------------------------"
 curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/matcha-icefall-en_US-ljspeech.tar.bz2
 tar xvf matcha-icefall-en_US-ljspeech.tar.bz2
 rm matcha-icefall-en_US-ljspeech.tar.bz2
 
-curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_v2.onnx
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
+
 
 $EXE \
   --matcha-acoustic-model=./matcha-icefall-en_US-ljspeech/model-steps-3.onnx \
-  --matcha-vocoder=./hifigan_v2.onnx \
+  --matcha-vocoder=./vocos-22khz-univ.onnx \
   --matcha-tokens=./matcha-icefall-en_US-ljspeech/tokens.txt \
   --matcha-data-dir=./matcha-icefall-en_US-ljspeech/espeak-ng-data \
   --num-threads=2 \
@@ -62,8 +86,9 @@ $EXE \
   --debug=1 \
  "Today as always, men fall into two groups: slaves and free men. Whoever does not have two-thirds of his day for himself, is a slave, whatever he may be: a statesman, a businessman, an official, or a scholar."
 
-rm hifigan_v2.onnx
+rm vocos-22khz-univ.onnx
 rm -rf matcha-icefall-en_US-ljspeech
+ls -lh tts/*.wav
 
 log "------------------------------------------------------------"
 log "matcha-icefall-zh-baker"
@@ -72,11 +97,11 @@ curl -O -SL https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/m
 tar xvf matcha-icefall-zh-baker.tar.bz2
 rm matcha-icefall-zh-baker.tar.bz2
 
-curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_v2.onnx
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
 
 $EXE \
   --matcha-acoustic-model=./matcha-icefall-zh-baker/model-steps-3.onnx \
-  --matcha-vocoder=./hifigan_v2.onnx \
+  --matcha-vocoder=./vocos-22khz-univ.onnx \
   --matcha-lexicon=./matcha-icefall-zh-baker/lexicon.txt \
   --matcha-tokens=./matcha-icefall-zh-baker/tokens.txt \
   --matcha-dict-dir=./matcha-icefall-zh-baker/dict \
@@ -87,7 +112,7 @@ $EXE \
 
 $EXE \
   --matcha-acoustic-model=./matcha-icefall-zh-baker/model-steps-3.onnx \
-  --matcha-vocoder=./hifigan_v2.onnx \
+  --matcha-vocoder=./vocos-22khz-univ.onnx \
   --matcha-lexicon=./matcha-icefall-zh-baker/lexicon.txt \
   --matcha-tokens=./matcha-icefall-zh-baker/tokens.txt \
   --matcha-dict-dir=./matcha-icefall-zh-baker/dict \
@@ -96,7 +121,7 @@ $EXE \
   --output-filename=./tts/matcha-baker-zh-2.wav \
   "当夜幕降临，星光点点，伴随着微风拂面，我在静谧中感受着时光的流转，思念如涟漪荡漾，梦境如画卷展开，我与自然融为一体，沉静在这片宁静的美丽之中，感受着生命的奇迹与温柔。"
 
-rm hifigan_v2.onnx
+rm vocos-22khz-univ.onnx
 rm -rf matcha-icefall-zh-baker
 
 log "------------------------------------------------------------"

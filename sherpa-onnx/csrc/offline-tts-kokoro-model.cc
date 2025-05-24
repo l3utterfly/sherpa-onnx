@@ -18,6 +18,7 @@
 #include "rawfile/raw_file_manager.h"
 #endif
 
+#include "sherpa-onnx/csrc/file-utils.h"
 #include "sherpa-onnx/csrc/macros.h"
 #include "sherpa-onnx/csrc/onnx-utils.h"
 #include "sherpa-onnx/csrc/session.h"
@@ -83,6 +84,9 @@ class OfflineTtsKokoroModel::Impl {
         style_embedding_shape.size());
 
     int64_t speed_shape = 1;
+    if (config_.kokoro.length_scale != 1 && speed == 1) {
+      speed = 1. / config_.kokoro.length_scale;
+    }
 
     Ort::Value speed_tensor =
         Ort::Value::CreateTensor(memory_info, &speed, 1, &speed_shape, 1);
@@ -138,6 +142,8 @@ class OfflineTtsKokoroModel::Impl {
     SHERPA_ONNX_READ_META_DATA_WITH_DEFAULT(meta_data_.version, "version", 1);
     SHERPA_ONNX_READ_META_DATA(meta_data_.num_speakers, "n_speakers");
     SHERPA_ONNX_READ_META_DATA(meta_data_.has_espeak, "has_espeak");
+    SHERPA_ONNX_READ_META_DATA_STR_WITH_DEFAULT(meta_data_.voice, "voice",
+                                                "en-us");
 
     if (config_.debug) {
       std::vector<std::string> speaker_names;

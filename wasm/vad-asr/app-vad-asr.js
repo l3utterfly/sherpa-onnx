@@ -5,7 +5,6 @@
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const clearBtn = document.getElementById('clearBtn');
-const hint = document.getElementById('hint');
 const soundClips = document.getElementById('sound-clips');
 
 let textArea = document.getElementById('results');
@@ -40,8 +39,6 @@ function getDisplayResult() {
   }
   return ans;
 }
-
-
 
 Module = {};
 
@@ -118,6 +115,8 @@ function initOfflineRecognizer() {
       uncachedDecoder: './moonshine-uncached-decoder.onnx',
       cachedDecoder: './moonshine-cached-decoder.onnx'
     };
+  } else if (fileExists('dolphin.onnx')) {
+    config.modelConfig.dolphin = {model: './dolphin.onnx'};
   } else {
     console.log('Please specify a model.');
     alert('Please specify a model.');
@@ -126,9 +125,37 @@ function initOfflineRecognizer() {
   recognizer = new OfflineRecognizer(config, Module);
 }
 
+// https://emscripten.org/docs/api_reference/module.html#Module.locateFile
+Module.locateFile = function(path, scriptDirectory = '') {
+  console.log(`path: ${path}, scriptDirectory: ${scriptDirectory}`);
+  return scriptDirectory + path;
+};
+
+// https://emscripten.org/docs/api_reference/module.html#Module.locateFile
+Module.setStatus = function(status) {
+  console.log(`status ${status}`);
+  const statusElement = document.getElementById('status');
+  if (status == 'Running...') {
+    status = 'Model downloaded. Initializing recongizer...'
+  }
+  statusElement.textContent = status;
+  if (status === '') {
+    statusElement.style.display = 'none';
+    // statusElement.parentNode.removeChild(statusElement);
+
+    document.querySelectorAll('.tab-content').forEach((tabContentElement) => {
+      tabContentElement.classList.remove('loading');
+    });
+  } else {
+    statusElement.style.display = 'block';
+    document.querySelectorAll('.tab-content').forEach((tabContentElement) => {
+      tabContentElement.classList.add('loading');
+    });
+  }
+};
+
 Module.onRuntimeInitialized = function() {
   console.log('inited!');
-  hint.innerText = 'Model loaded! Please click start';
 
   startBtn.disabled = false;
 
@@ -140,8 +167,6 @@ Module.onRuntimeInitialized = function() {
 
   initOfflineRecognizer();
 };
-
-
 
 if (navigator.mediaDevices.getUserMedia) {
   console.log('getUserMedia supported.');
@@ -218,7 +243,6 @@ if (navigator.mediaDevices.getUserMedia) {
           }
 
           resultList.push(durationStr);
-
 
           // now save the segment to a wav file
           let buf = new Int16Array(segment.samples.length);
@@ -317,7 +341,6 @@ if (navigator.mediaDevices.getUserMedia) {
   console.log('getUserMedia not supported on your browser!');
   alert('getUserMedia not supported on your browser!');
 }
-
 
 // this function is copied/modified from
 // https://gist.github.com/meziantou/edb7217fddfbb70e899e

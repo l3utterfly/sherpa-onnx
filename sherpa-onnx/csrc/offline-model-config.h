@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include "sherpa-onnx/csrc/offline-dolphin-model-config.h"
+#include "sherpa-onnx/csrc/offline-fire-red-asr-model-config.h"
 #include "sherpa-onnx/csrc/offline-moonshine-model-config.h"
 #include "sherpa-onnx/csrc/offline-nemo-enc-dec-ctc-model-config.h"
 #include "sherpa-onnx/csrc/offline-paraformer-model-config.h"
@@ -23,11 +25,13 @@ struct OfflineModelConfig {
   OfflineParaformerModelConfig paraformer;
   OfflineNemoEncDecCtcModelConfig nemo_ctc;
   OfflineWhisperModelConfig whisper;
+  OfflineFireRedAsrModelConfig fire_red_asr;
   OfflineTdnnModelConfig tdnn;
   OfflineZipformerCtcModelConfig zipformer_ctc;
   OfflineWenetCtcModelConfig wenet_ctc;
   OfflineSenseVoiceModelConfig sense_voice;
   OfflineMoonshineModelConfig moonshine;
+  OfflineDolphinModelConfig dolphin;
   std::string telespeech_ctc;
 
   std::string tokens;
@@ -54,11 +58,13 @@ struct OfflineModelConfig {
                      const OfflineParaformerModelConfig &paraformer,
                      const OfflineNemoEncDecCtcModelConfig &nemo_ctc,
                      const OfflineWhisperModelConfig &whisper,
+                     const OfflineFireRedAsrModelConfig &fire_red_asr,
                      const OfflineTdnnModelConfig &tdnn,
                      const OfflineZipformerCtcModelConfig &zipformer_ctc,
                      const OfflineWenetCtcModelConfig &wenet_ctc,
                      const OfflineSenseVoiceModelConfig &sense_voice,
                      const OfflineMoonshineModelConfig &moonshine,
+                     const OfflineDolphinModelConfig &dolphin,
                      const std::string &telespeech_ctc,
                      const std::string &tokens, int32_t num_threads, bool debug,
                      const std::string &provider, const std::string &model_type,
@@ -68,11 +74,13 @@ struct OfflineModelConfig {
         paraformer(paraformer),
         nemo_ctc(nemo_ctc),
         whisper(whisper),
+        fire_red_asr(fire_red_asr),
         tdnn(tdnn),
         zipformer_ctc(zipformer_ctc),
         wenet_ctc(wenet_ctc),
         sense_voice(sense_voice),
         moonshine(moonshine),
+        dolphin(dolphin),
         telespeech_ctc(telespeech_ctc),
         tokens(tokens),
         num_threads(num_threads),

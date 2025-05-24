@@ -5,7 +5,7 @@ from _sherpa_onnx import (
     AudioTaggingConfig,
     AudioTaggingModelConfig,
     CircularBuffer,
-    Display,
+    DenoisedAudio,
     FastClustering,
     FastClusteringConfig,
     OfflinePunctuation,
@@ -17,6 +17,10 @@ from _sherpa_onnx import (
     OfflineSpeakerDiarizationSegment,
     OfflineSpeakerSegmentationModelConfig,
     OfflineSpeakerSegmentationPyannoteModelConfig,
+    OfflineSpeechDenoiser,
+    OfflineSpeechDenoiserConfig,
+    OfflineSpeechDenoiserGtcrnModelConfig,
+    OfflineSpeechDenoiserModelConfig,
     OfflineStream,
     OfflineTts,
     OfflineTtsConfig,
@@ -43,6 +47,7 @@ from _sherpa_onnx import (
     write_wave,
 )
 
+from .display import Display
 from .keyword_spotter import KeywordSpotter
 from .offline_recognizer import OfflineRecognizer
 from .online_recognizer import OnlineRecognizer

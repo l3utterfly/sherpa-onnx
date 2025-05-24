@@ -17,6 +17,7 @@
 #include "rawfile/raw_file_manager.h"
 #endif
 
+#include "sherpa-onnx/csrc/file-utils.h"
 #include "sherpa-onnx/csrc/macros.h"
 #include "sherpa-onnx/csrc/onnx-utils.h"
 #include "sherpa-onnx/csrc/session.h"
@@ -44,11 +45,21 @@ class HifiganVocoder::Impl {
     Init(buf.data(), buf.size());
   }
 
-  Ort::Value Run(Ort::Value mel) const {
+  std::vector<float> Run(Ort::Value mel) const {
     auto out = sess_->Run({}, input_names_ptr_.data(), &mel, 1,
                           output_names_ptr_.data(), output_names_ptr_.size());
 
-    return std::move(out[0]);
+    std::vector<int64_t> audio_shape =
+        out[0].GetTensorTypeAndShapeInfo().GetShape();
+
+    int64_t total = 1;
+    // The output shape may be (1, 1, total) or (1, total) or (total,)
+    for (auto i : audio_shape) {
+      total *= i;
+    }
+
+    const float *p = out[0].GetTensorData<float>();
+    return {p, p + total};
   }
 
  private:
@@ -87,7 +98,7 @@ HifiganVocoder::HifiganVocoder(Manager *mgr, int32_t num_threads,
 
 HifiganVocoder::~HifiganVocoder() = default;
 
-Ort::Value HifiganVocoder::Run(Ort::Value mel) const {
+std::vector<float> HifiganVocoder::Run(Ort::Value mel) const {
   return impl_->Run(std::move(mel));
 }
 

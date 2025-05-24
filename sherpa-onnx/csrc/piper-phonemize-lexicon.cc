@@ -27,15 +27,14 @@
 #include "espeak-ng/speak_lib.h"
 #include "phoneme_ids.hpp"
 #include "phonemize.hpp"
+#include "sherpa-onnx/csrc/file-utils.h"
 #include "sherpa-onnx/csrc/macros.h"
-#include "sherpa-onnx/csrc/onnx-utils.h"
 
 namespace sherpa_onnx {
 
-static void CallPhonemizeEspeak(
-    const std::string &text,
-    piper::eSpeakPhonemeConfig &config,  // NOLINT
-    std::vector<std::vector<piper::Phoneme>> *phonemes) {
+void CallPhonemizeEspeak(const std::string &text,
+                         piper::eSpeakPhonemeConfig &config,  // NOLINT
+                         std::vector<std::vector<piper::Phoneme>> *phonemes) {
   static std::mutex espeak_mutex;
 
   std::lock_guard<std::mutex> lock(espeak_mutex);
@@ -245,7 +244,7 @@ static std::vector<int64_t> CoquiPhonemesToIds(
   return ans;
 }
 
-static void InitEspeak(const std::string &data_dir) {
+void InitEspeak(const std::string &data_dir) {
   static std::once_flag init_flag;
   std::call_once(init_flag, [data_dir]() {
     int32_t result =

@@ -22,15 +22,16 @@
 #include "fst/extensions/far/far.h"
 #include "kaldifst/csrc/kaldi-fst-io.h"
 #include "onnxruntime_cxx_api.h"  // NOLINT
+#include "sherpa-onnx/csrc/file-utils.h"
 #include "sherpa-onnx/csrc/macros.h"
 #include "sherpa-onnx/csrc/offline-recognizer-ctc-impl.h"
+#include "sherpa-onnx/csrc/offline-recognizer-fire-red-asr-impl.h"
 #include "sherpa-onnx/csrc/offline-recognizer-moonshine-impl.h"
 #include "sherpa-onnx/csrc/offline-recognizer-paraformer-impl.h"
 #include "sherpa-onnx/csrc/offline-recognizer-sense-voice-impl.h"
 #include "sherpa-onnx/csrc/offline-recognizer-transducer-impl.h"
 #include "sherpa-onnx/csrc/offline-recognizer-transducer-nemo-impl.h"
 #include "sherpa-onnx/csrc/offline-recognizer-whisper-impl.h"
-#include "sherpa-onnx/csrc/onnx-utils.h"
 #include "sherpa-onnx/csrc/text-utils.h"
 
 namespace sherpa_onnx {
@@ -48,12 +49,17 @@ std::unique_ptr<OfflineRecognizerImpl> OfflineRecognizerImpl::Create(
   if (!config.model_config.nemo_ctc.model.empty() ||
       !config.model_config.zipformer_ctc.model.empty() ||
       !config.model_config.tdnn.model.empty() ||
-      !config.model_config.wenet_ctc.model.empty()) {
+      !config.model_config.wenet_ctc.model.empty() ||
+      !config.model_config.dolphin.model.empty()) {
     return std::make_unique<OfflineRecognizerCtcImpl>(config);
   }
 
   if (!config.model_config.whisper.encoder.empty()) {
     return std::make_unique<OfflineRecognizerWhisperImpl>(config);
+  }
+
+  if (!config.model_config.fire_red_asr.encoder.empty()) {
+    return std::make_unique<OfflineRecognizerFireRedAsrImpl>(config);
   }
 
   if (!config.model_config.moonshine.preprocessor.empty()) {
@@ -229,12 +235,17 @@ std::unique_ptr<OfflineRecognizerImpl> OfflineRecognizerImpl::Create(
   if (!config.model_config.nemo_ctc.model.empty() ||
       !config.model_config.zipformer_ctc.model.empty() ||
       !config.model_config.tdnn.model.empty() ||
-      !config.model_config.wenet_ctc.model.empty()) {
+      !config.model_config.wenet_ctc.model.empty() ||
+      !config.model_config.dolphin.model.empty()) {
     return std::make_unique<OfflineRecognizerCtcImpl>(mgr, config);
   }
 
   if (!config.model_config.whisper.encoder.empty()) {
     return std::make_unique<OfflineRecognizerWhisperImpl>(mgr, config);
+  }
+
+  if (!config.model_config.fire_red_asr.encoder.empty()) {
+    return std::make_unique<OfflineRecognizerFireRedAsrImpl>(mgr, config);
   }
 
   if (!config.model_config.moonshine.preprocessor.empty()) {
@@ -397,6 +408,8 @@ std::unique_ptr<OfflineRecognizerImpl> OfflineRecognizerImpl::Create(
 OfflineRecognizerImpl::OfflineRecognizerImpl(
     const OfflineRecognizerConfig &config)
     : config_(config) {
+  // TODO(fangjun): Refactor this function
+
   if (!config.rule_fsts.empty()) {
     std::vector<std::string> files;
     SplitStringToVector(config.rule_fsts, ",", false, &files);
@@ -436,6 +449,13 @@ OfflineRecognizerImpl::OfflineRecognizerImpl(
     if (config.model_config.debug) {
       SHERPA_ONNX_LOGE("FST archives loaded!");
     }
+  }
+
+  if (!config.hr.dict_dir.empty() && !config.hr.lexicon.empty() &&
+      !config.hr.rule_fsts.empty()) {
+    auto hr_config = config.hr;
+    hr_config.debug = config.model_config.debug;
+    hr_ = std::make_unique<HomophoneReplacer>(hr_config);
   }
 }
 
@@ -484,6 +504,13 @@ OfflineRecognizerImpl::OfflineRecognizerImpl(
       }  // for (; !reader->Done(); reader->Next())
     }    // for (const auto &f : files)
   }      // if (!config.rule_fars.empty())
+
+  if (!config.hr.dict_dir.empty() && !config.hr.lexicon.empty() &&
+      !config.hr.rule_fsts.empty()) {
+    auto hr_config = config.hr;
+    hr_config.debug = config.model_config.debug;
+    hr_ = std::make_unique<HomophoneReplacer>(mgr, hr_config);
+  }
 }
 
 std::string OfflineRecognizerImpl::ApplyInverseTextNormalization(
@@ -494,6 +521,15 @@ std::string OfflineRecognizerImpl::ApplyInverseTextNormalization(
     for (const auto &tn : itn_list_) {
       text = tn->Normalize(text);
     }
+  }
+
+  return text;
+}
+
+std::string OfflineRecognizerImpl::ApplyHomophoneReplacer(
+    std::string text) const {
+  if (hr_) {
+    text = hr_->Apply(text);
   }
 
   return text;

@@ -41,6 +41,7 @@ class TtsModel:
     dict_dir: Optional[str] = None
     is_char: bool = False
     lang_iso_639_3: str = ""
+    lexicon: str = ""
 
 
 def convert_lang_to_iso_639_3(models: List[TtsModel]):
@@ -394,20 +395,30 @@ def get_matcha_models() -> List[TtsModel]:
         s = [f"{m.model_dir}/{r}" for r in rule_fsts]
         m.rule_fsts = ",".join(s)
         m.dict_dir = m.model_dir + "/dict"
-        m.vocoder = "hifigan_v2.onnx"
+        m.vocoder = "vocos-22khz-univ.onnx"
 
-    english_models = [
+    english_persian_models = [
         TtsModel(
             model_dir="matcha-icefall-en_US-ljspeech",
             acoustic_model_name="model-steps-3.onnx",
             lang="en",
-        )
+        ),
+        TtsModel(
+            model_dir="matcha-tts-fa_en-musa",
+            acoustic_model_name="model.onnx",
+            lang="fa",
+        ),
+        TtsModel(
+            model_dir="matcha-tts-fa_en-khadijah",
+            acoustic_model_name="model.onnx",
+            lang="fa",
+        ),
     ]
-    for m in english_models:
+    for m in english_persian_models:
         m.data_dir = f"{m.model_dir}/espeak-ng-data"
-        m.vocoder = "hifigan_v2.onnx"
+        m.vocoder = "vocos-22khz-univ.onnx"
 
-    return chinese_models + english_models
+    return chinese_models + english_persian_models
 
 
 def get_kokoro_models() -> List[TtsModel]:
@@ -422,7 +433,31 @@ def get_kokoro_models() -> List[TtsModel]:
         m.data_dir = f"{m.model_dir}/espeak-ng-data"
         m.voices = "voices.bin"
 
-    return english_models
+    multi_lingual_models = [
+        TtsModel(
+            model_dir="kokoro-multi-lang-v1_0",
+            model_name="model.onnx",
+            lang="en",
+        ),
+        TtsModel(
+            model_dir="kokoro-multi-lang-v1_1",
+            model_name="model.onnx",
+            lang="en",
+        ),
+        TtsModel(
+            model_dir="kokoro-int8-multi-lang-v1_1",
+            model_name="model.int8.onnx",
+            lang="en",
+        ),
+    ]
+    for m in multi_lingual_models:
+        m.data_dir = f"{m.model_dir}/espeak-ng-data"
+        m.dict_dir = f"{m.model_dir}/dict"
+        m.voices = "voices.bin"
+        m.lexicon = f"{m.model_dir}/lexicon-us-en.txt,{m.model_dir}/lexicon-zh.txt"
+        m.rule_fsts = f"{m.model_dir}/phone-zh.fst,{m.model_dir}/date-zh.fst,{m.model_dir}/number-zh.fst"
+
+    return english_models + multi_lingual_models
 
 
 def main():

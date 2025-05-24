@@ -5,6 +5,7 @@
 #include "sherpa-onnx/csrc/offline-tts.h"
 
 #include "sherpa-onnx/csrc/macros.h"
+#include "sherpa-onnx/csrc/wave-writer.h"
 #include "sherpa-onnx/jni/common.h"
 
 namespace sherpa_onnx {
@@ -137,10 +138,22 @@ static OfflineTtsConfig GetOfflineTtsConfig(JNIEnv *env, jobject config) {
   ans.model.kokoro.tokens = p;
   env->ReleaseStringUTFChars(s, p);
 
+  fid = env->GetFieldID(kokoro_cls, "lexicon", "Ljava/lang/String;");
+  s = (jstring)env->GetObjectField(kokoro, fid);
+  p = env->GetStringUTFChars(s, nullptr);
+  ans.model.kokoro.lexicon = p;
+  env->ReleaseStringUTFChars(s, p);
+
   fid = env->GetFieldID(kokoro_cls, "dataDir", "Ljava/lang/String;");
   s = (jstring)env->GetObjectField(kokoro, fid);
   p = env->GetStringUTFChars(s, nullptr);
   ans.model.kokoro.data_dir = p;
+  env->ReleaseStringUTFChars(s, p);
+
+  fid = env->GetFieldID(kokoro_cls, "dictDir", "Ljava/lang/String;");
+  s = (jstring)env->GetObjectField(kokoro, fid);
+  p = env->GetStringUTFChars(s, nullptr);
+  ans.model.kokoro.dict_dir = p;
   env->ReleaseStringUTFChars(s, p);
 
   fid = env->GetFieldID(kokoro_cls, "lengthScale", "F");
@@ -175,6 +188,9 @@ static OfflineTtsConfig GetOfflineTtsConfig(JNIEnv *env, jobject config) {
   fid = env->GetFieldID(cls, "maxNumSentences", "I");
   ans.max_num_sentences = env->GetIntField(config, fid);
 
+  fid = env->GetFieldID(cls, "silenceScale", "F");
+  ans.silence_scale = env->GetFloatField(config, fid);
+
   return ans;
 }
 
@@ -205,16 +221,20 @@ JNIEXPORT jlong JNICALL Java_com_k2fsa_sherpa_onnx_OfflineTts_newFromAsset(
 SHERPA_ONNX_EXTERN_C
 JNIEXPORT jlong JNICALL Java_com_k2fsa_sherpa_onnx_OfflineTts_newFromFile(
     JNIEnv *env, jobject /*obj*/, jobject _config) {
-  auto config = sherpa_onnx::GetOfflineTtsConfig(env, _config);
-  SHERPA_ONNX_LOGE("config:\n%s", config.ToString().c_str());
+  return SafeJNI(
+      env, "OfflineTts_newFromFile",
+      [&]() -> jlong {
+        auto config = sherpa_onnx::GetOfflineTtsConfig(env, _config);
+        SHERPA_ONNX_LOGE("config:\n%s", config.ToString().c_str());
 
-  if (!config.Validate()) {
-    SHERPA_ONNX_LOGE("Errors found in config!");
-  }
+        if (!config.Validate()) {
+          SHERPA_ONNX_LOGE("Errors found in config!");
+        }
 
-  auto tts = new sherpa_onnx::OfflineTts(config);
-
-  return (jlong)tts;
+        auto tts = new sherpa_onnx::OfflineTts(config);
+        return reinterpret_cast<jlong>(tts);
+      },
+      (jlong)0);
 }
 
 SHERPA_ONNX_EXTERN_C
@@ -241,7 +261,6 @@ Java_com_k2fsa_sherpa_onnx_OfflineTts_generateImpl(JNIEnv *env, jobject /*obj*/,
                                                    jlong ptr, jstring text,
                                                    jint sid, jfloat speed) {
   const char *p_text = env->GetStringUTFChars(text, nullptr);
-  SHERPA_ONNX_LOGE("string is: %s", p_text);
 
   auto audio = reinterpret_cast<sherpa_onnx::OfflineTts *>(ptr)->Generate(
       p_text, sid, speed);
@@ -267,7 +286,6 @@ Java_com_k2fsa_sherpa_onnx_OfflineTts_generateWithCallbackImpl(
     JNIEnv *env, jobject /*obj*/, jlong ptr, jstring text, jint sid,
     jfloat speed, jobject callback) {
   const char *p_text = env->GetStringUTFChars(text, nullptr);
-  SHERPA_ONNX_LOGE("string is: %s", p_text);
 
   std::function<int32_t(const float *, int32_t, float)> callback_wrapper =
       [env, callback](const float *samples, int32_t n,
@@ -322,4 +340,21 @@ Java_com_k2fsa_sherpa_onnx_OfflineTts_generateWithCallbackImpl(
   env->ReleaseStringUTFChars(text, p_text);
 
   return obj_arr;
+}
+
+SHERPA_ONNX_EXTERN_C
+JNIEXPORT jboolean JNICALL Java_com_k2fsa_sherpa_onnx_GeneratedAudio_saveImpl(
+    JNIEnv *env, jobject /*obj*/, jstring filename, jfloatArray samples,
+    jint sample_rate) {
+  const char *p_filename = env->GetStringUTFChars(filename, nullptr);
+
+  jfloat *p = env->GetFloatArrayElements(samples, nullptr);
+  jsize n = env->GetArrayLength(samples);
+
+  bool ok = sherpa_onnx::WriteWave(p_filename, sample_rate, p, n);
+
+  env->ReleaseStringUTFChars(filename, p_filename);
+  env->ReleaseFloatArrayElements(samples, p, JNI_ABORT);
+
+  return ok;
 }

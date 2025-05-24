@@ -105,10 +105,56 @@ jobs:
             make -j4
             ls -lh lib
 
+      - name:  Run java test (Non-streaming SenseVoice with homophone replacer)
+        shell: bash
+        run: |
+          cd ./java-api-examples
+          ./run-non-streaming-decode-file-sense-voice-with-hr.sh
+          rm -rf sherpa-onnx-sense-*
+          rm -rf dict lexicon.txt replace.fst
+
+      - name:  Run java test (VAD + Non-streaming Dolphin CTC)
+        shell: bash
+        run: |
+          cd ./java-api-examples
+          ./run-vad-non-streaming-dolphin-ctc.sh
+          rm *.onnx
+          ls -lh *.wav
+          rm *.wav
+          rm -rf sherpa-onnx-dolphin-*
+
+      - name:  Run speech enhancement (GTCRN)
+        shell: bash
+        run: |
+          cd ./java-api-examples
+          ./run-non-streaming-speech-enhancement-gtcrn.sh
+          ls -lh *.wav
+
+          rm -fv gtcrn_simple.onnx *.wav
+
+      - name:  Run java test (Online add punctuations)
+        shell: bash
+        run: |
+          cd ./java-api-examples
+          ./run-online-add-punctuation-zh-en.sh
+          # Delete model files to save space
+          rm -rf sherpa-onnx-online-*
+
+      - name:  Run java test (Offline add punctuations)
+        shell: bash
+        run: |
+          cd ./java-api-examples
+          ./run-offline-add-punctuation-zh-en.sh
+          # Delete model files to save space
+          rm -rf sherpa-onnx-punct-*
+
       - name:  Run java test (Non-Streaming ASR)
         shell: bash
         run: |
           cd ./java-api-examples
+
+          ./run-non-streaming-decode-file-dolphin-ctc.sh
+          rm -rf sherpa-onnx-dolphin-*
 
           ./run-non-streaming-decode-file-moonshine.sh
           rm -rf sherpa-onnx-moonshine-*
@@ -124,7 +170,12 @@ jobs:
           ./run-non-streaming-decode-file-transducer.sh
           rm -rf sherpa-onnx-zipformer-*
 
+          ./run-non-streaming-decode-file-fire-red-asr.sh
+          rm -rf sherpa-onnx-fire-red-*
+
           ./run-non-streaming-decode-file-whisper.sh
+
+          ./run-non-streaming-decode-file-whisper-multiple.sh
           rm -rf sherpa-onnx-whisper-*
 
           ./run-non-streaming-decode-file-nemo.sh
@@ -193,13 +244,6 @@ jobs:
           ./run-audio-tagging-ced-from-file.sh
           rm -rf sherpa-onnx-ced-*
 
-      - name:  Run java test (add punctuations)
-        shell: bash
-        run: |
-          cd ./java-api-examples
-          ./run-add-punctuation-zh-en.sh
-          # Delete model files to save space
-          rm -rf sherpa-onnx-punct-*
 
       - name:  Run java test (Spoken language identification)
         shell: bash
@@ -234,15 +278,17 @@ jobs:
         run: |
           cd ./java-api-examples
 
+          ./run-non-streaming-tts-kokoro-zh-en.sh
           ./run-non-streaming-tts-kokoro-en.sh
           ./run-non-streaming-tts-matcha-zh.sh
           ./run-non-streaming-tts-matcha-en.sh
           ls -lh
 
+          rm -rf kokoro-multi-*
           rm -rf kokoro-en-*
 
           rm -rf matcha-icefall-*
-          rm hifigan_v2.onnx
+          rm vocos-22khz-univ.onnx
 
           ./run-non-streaming-tts-piper-en.sh
           rm -rf vits-piper-*

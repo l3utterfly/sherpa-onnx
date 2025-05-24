@@ -111,19 +111,90 @@ jobs:
           ls -lh install/lib/
 
           if [[ ${{ matrix.os }} == 'windows-latest' ]]; then
-            cp -v install/lib/*.dll ../pascal-api-examples/read-wav
-            cp -v install/lib/*.dll ../pascal-api-examples/streaming-asr
             cp -v install/lib/*.dll ../pascal-api-examples/non-streaming-asr
+            cp -v install/lib/*.dll ../pascal-api-examples/read-wav
+            cp -v install/lib/*.dll ../pascal-api-examples/speaker-diarization
+            cp -v install/lib/*.dll ../pascal-api-examples/speech-enhancement-gtcrn
+            cp -v install/lib/*.dll ../pascal-api-examples/streaming-asr
+            cp -v install/lib/*.dll ../pascal-api-examples/tts
             cp -v install/lib/*.dll ../pascal-api-examples/vad
             cp -v install/lib/*.dll ../pascal-api-examples/vad-with-non-streaming-asr
 
-            cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/read-wav
-            cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/streaming-asr
             cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/non-streaming-asr
+            cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/read-wav
+            cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/speaker-diarization
+            cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/speech-enhancement-gtcrn
+            cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/streaming-asr
+            cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/tts
             cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/vad
             cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/vad-with-non-streaming-asr
-            cp -v ../sherpa-onnx/pascal-api/*.pas ../pascal-api-examples/tts
           fi
+
+      - name:  Run Speech Enhancement test (GTCRN)
+        shell: bash
+        run: |
+          export PATH=/c/lazarus/fpc/3.2.2/bin/x86_64-win64:$PATH
+
+          cd ./pascal-api-examples
+
+          pushd speech-enhancement-gtcrn
+          ./run-gtcrn.sh
+          ls -lh
+
+      - name:  Run Pascal test (Non Streaming ASR)
+        shell: bash
+        run: |
+          export PATH=/c/lazarus/fpc/3.2.2/bin/x86_64-win64:$PATH
+
+          cd ./pascal-api-examples
+
+          pushd non-streaming-asr
+
+          ./run-dolphin-ctc.sh
+          rm -rf sherpa-onnx-*
+          echo "---"
+
+          ./run-zipformer-transducer.sh
+          rm -rf sherpa-onnx-*
+          echo "---"
+
+          ./run-moonshine.sh
+          rm -rf sherpa-onnx-*
+          echo "---"
+
+          ./run-fire-red-asr.sh
+          rm -rf sherpa-onnx-fire-red-asr*
+          echo "---"
+
+          ./run-whisper.sh
+          rm -rf sherpa-onnx-*
+          echo "---"
+
+          ./run-nemo-transducer.sh
+          rm -rf sherpa-onnx-*
+          echo "---"
+
+          ./run-nemo-ctc.sh
+          rm -rf sherpa-onnx-*
+          echo "---"
+
+          ./run-sense-voice.sh
+          rm -rf sherpa-onnx-*
+          echo "---"
+
+          ./run-telespeech-ctc.sh
+          rm -rf sherpa-onnx-*
+          echo "---"
+
+          ./run-paraformer.sh
+
+          ./run-paraformer-itn.sh
+
+          rm -rf sherpa-onnx-*
+          echo "---"
+
+          ls -lh
+          popd
 
       - name:  Run Pascal test (Speaker diarization)
         shell: bash
@@ -154,6 +225,12 @@ jobs:
           ls -lh
           echo "---"
 
+          ./run-kokoro-zh-en.sh
+          rm -rf kokoro-multi-*
+          rm kokoro-zh-en
+          ls -lh
+          echo "---"
+
           ./run-kokoro-en.sh
           rm -rf kokoro-en-*
           rm kokoro-en
@@ -181,7 +258,13 @@ jobs:
 
           cd ./pascal-api-examples
 
+
           pushd vad-with-non-streaming-asr
+
+          time ./run-vad-with-dolphin-ctc.sh
+          rm -rf sherpa-onnx-*
+          echo "---"
+
           time ./run-vad-with-moonshine.sh
           rm -rf sherpa-onnx-*
           echo "---"
@@ -226,52 +309,6 @@ jobs:
           pushd read-wav
           ./run.sh
           echo "---"
-          ls -lh
-          popd
-
-      - name:  Run Pascal test (Non Streaming ASR)
-        shell: bash
-        run: |
-          export PATH=/c/lazarus/fpc/3.2.2/bin/x86_64-win64:$PATH
-
-          cd ./pascal-api-examples
-
-          pushd non-streaming-asr
-          ./run-zipformer-transducer.sh
-          rm -rf sherpa-onnx-*
-          echo "---"
-
-          ./run-moonshine.sh
-          rm -rf sherpa-onnx-*
-          echo "---"
-
-          ./run-whisper.sh
-          rm -rf sherpa-onnx-*
-          echo "---"
-
-          ./run-nemo-transducer.sh
-          rm -rf sherpa-onnx-*
-          echo "---"
-
-          ./run-nemo-ctc.sh
-          rm -rf sherpa-onnx-*
-          echo "---"
-
-          ./run-sense-voice.sh
-          rm -rf sherpa-onnx-*
-          echo "---"
-
-          ./run-telespeech-ctc.sh
-          rm -rf sherpa-onnx-*
-          echo "---"
-
-          ./run-paraformer.sh
-
-          ./run-paraformer-itn.sh
-
-          rm -rf sherpa-onnx-*
-          echo "---"
-
           ls -lh
           popd
 

@@ -4,13 +4,16 @@ import 'dart:ffi';
 
 export 'src/audio_tagging.dart';
 export 'src/feature_config.dart';
+export 'src/homophone_replacer_config.dart';
 export 'src/keyword_spotter.dart';
+export 'src/offline_punctuation.dart';
 export 'src/offline_recognizer.dart';
 export 'src/offline_speaker_diarization.dart';
+export 'src/offline_speech_denoiser.dart';
 export 'src/offline_stream.dart';
+export 'src/online_punctuation.dart';
 export 'src/online_recognizer.dart';
 export 'src/online_stream.dart';
-export 'src/punctuation.dart';
 export 'src/speaker_identification.dart';
 export 'src/tts.dart';
 export 'src/vad.dart';

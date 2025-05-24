@@ -177,8 +177,6 @@ class MainActivity : ComponentActivity() {
                                                 rtfText = ""
                                                 Log.i(TAG, "Started with text $testText")
 
-                                                samplesChannel = Channel<FloatArray>()
-
                                                 CoroutineScope(Dispatchers.IO).launch {
                                                     for (samples in samplesChannel) {
                                                         track.write(
@@ -190,6 +188,10 @@ class MainActivity : ComponentActivity() {
                                                         if (stopped) {
                                                             break
                                                         }
+                                                    }
+
+                                                    for (s in samplesChannel) {
+                                                        // drain the channel
                                                     }
                                                 }
 
@@ -213,13 +215,12 @@ class MainActivity : ComponentActivity() {
                                                     val RTF = String.format(
                                                         "Number of threads: %d\nElapsed: %.3f s\nAudio duration: %.3f s\nRTF: %.3f/%.3f = %.3f",
                                                         TtsEngine.tts!!.config.model.numThreads,
-                                                        audioDuration,
                                                         elapsed,
+                                                        audioDuration,
                                                         elapsed,
                                                         audioDuration,
                                                         elapsed / audioDuration
                                                     )
-                                                    samplesChannel.close()
 
                                                     val filename =
                                                         application.filesDir.absolutePath + "/generated.wav"

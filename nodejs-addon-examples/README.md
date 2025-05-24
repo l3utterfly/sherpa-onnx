@@ -43,6 +43,12 @@ export LD_LIBRARY_PATH=$PWD/node_modules/.pnpm/sherpa-onnx-node@<REPLACE-THIS-WI
 
 The following tables list the examples in this folder.
 
+## Speech enhancement/denoising
+
+|File| Description|
+|---|---|
+|[./test_offline_speech_enhancement_gtcrn.js](./test_offline_speech_enhancement_gtcrn.js)| It demonstrates how to use sherpa-onnx JavaScript API for speech enhancement.|
+
 ## Speaker diarization
 
 |File| Description|
@@ -92,6 +98,7 @@ The following tables list the examples in this folder.
 |File| Description|
 |---|---|
 |[./test_asr_streaming_transducer.js](./test_asr_streaming_transducer.js)| Streaming speech recognition from a file using a Zipformer transducer model|
+|[./test_asr_streaming_transducer_with_hr.js](./test_asr_streaming_transducer_with_hr.js)| Streaming speech recognition from a file using a Zipformer transducer model with homophone replacer|
 |[./test_asr_streaming_ctc.js](./test_asr_streaming_ctc.js)| Streaming speech recognition from a file using a Zipformer CTC model with greedy search|
 |[./test_asr_streaming_ctc_hlg.js](./test_asr_streaming_ctc_hlg.js)| Streaming speech recognition from a file using a Zipformer CTC model with HLG decoding|
 |[./test_asr_streaming_paraformer.js](./test_asr_streaming_paraformer.js)|Streaming speech recognition from a file using a [Paraformer](https://github.com/alibaba-damo-academy/FunASR) model|
@@ -110,13 +117,17 @@ The following tables list the examples in this folder.
 |File| Description|
 |---|---|
 |[./test_asr_non_streaming_transducer.js](./test_asr_non_streaming_transducer.js)|Non-streaming speech recognition from a file with a Zipformer transducer model|
+|[./test_asr_non_streaming_fire_red_asr.js](./test_asr_non_streaming_fire_red_asr.js)| Non-streaming speech recognition from a file using [FireRedAsr](https://github.com/FireRedTeam/FireRedASR)|
 |[./test_asr_non_streaming_whisper.js](./test_asr_non_streaming_whisper.js)| Non-streaming speech recognition from a file using [Whisper](https://github.com/openai/whisper)|
 |[./test_vad_with_non_streaming_asr_whisper.js](./test_vad_with_non_streaming_asr_whisper.js)| Non-streaming speech recognition from a file using [Whisper](https://github.com/openai/whisper) + [Silero VAD](https://github.com/snakers4/silero-vad)|
 |[./test_asr_non_streaming_moonshine.js](./test_asr_non_streaming_moonshine.js)|Non-streaming speech recognition from a file using [Moonshine](https://github.com/usefulsensors/moonshine)|
 |[./test_vad_with_non_streaming_asr_moonshine.js](./test_vad_with_non_streaming_asr_moonshine.js)| Non-streaming speech recognition from a file using [Moonshine](https://github.com/usefulsensors/moonshine) + [Silero VAD](https://github.com/snakers4/silero-vad)|
 |[./test_asr_non_streaming_nemo_ctc.js](./test_asr_non_streaming_nemo_ctc.js)|Non-streaming speech recognition from a file using a [NeMo](https://github.com/NVIDIA/NeMo) CTC model with greedy search|
+|[./test_asr_non_streaming_nemo_parakeet_tdt_v2.js](./test_asr_non_streaming_nemo_parakeet_tdt_v2.js)|Non-streaming speech recognition from a file using a [NeMo](https://github.com/NVIDIA/NeMo) [parakeet-tdt-0.6b-v2](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-transducer/nemo-transducer-models.html#sherpa-onnx-nemo-parakeet-tdt-0-6b-v2-int8-english) model with greedy search|
+|[./test_asr_non_streaming_dolphin_ctc.js](./test_asr_non_streaming_dolphin_ctc.js)|Non-streaming speech recognition from a file using a [Dolphinhttps://github.com/DataoceanAI/Dolphin]) CTC model with greedy search|
 |[./test_asr_non_streaming_paraformer.js](./test_asr_non_streaming_paraformer.js)|Non-streaming speech recognition from a file using [Paraformer](https://github.com/alibaba-damo-academy/FunASR)|
 |[./test_asr_non_streaming_sense_voice.js](./test_asr_non_streaming_sense_voice.js)|Non-streaming speech recognition from a file using [SenseVoice](https://github.com/FunAudioLLM/SenseVoice)|
+|[./test_asr_non_streaming_sense_voice_with_hr.js](./test_asr_non_streaming_sense_voice_with_hr.js)|Non-streaming speech recognition from a file using [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) with homophone replacer|
 
 ## Non-Streaming speech-to-text from a microphone with VAD
 
@@ -134,6 +145,7 @@ The following tables list the examples in this folder.
 |File| Description|
 |---|---|
 |[./test_tts_non_streaming_kokoro_en.js](./test_tts_non_streaming_kokoro_en.js)| Text-to-speech with a Kokoro English Model|
+|[./test_tts_non_streaming_kokoro_zh_en.js](./test_tts_non_streaming_kokoro_zh_en.js)| Text-to-speech with a Kokoro Model supporting Chinese and English|
 |[./test_tts_non_streaming_matcha_icefall_en.js](./test_tts_non_streaming_matcha_icefall_en.js)| Text-to-speech with a [MatchaTTS English Model](https://k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/matcha.html#matcha-icefall-en-us-ljspeech-american-english-1-female-speaker)|
 |[./test_tts_non_streaming_matcha_icefall_zhjs](./test_tts_non_streaming_matcha_icefall_zh.js)| Text-to-speech with a [MatchaTTS Chinese Model](https://k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/matcha.html#matcha-icefall-zh-baker-chinese-1-female-speaker)|
 |[./test_tts_non_streaming_vits_piper_en.js](./test_tts_non_streaming_vits_piper_en.js)| Text-to-speech with a [piper](https://github.com/rhasspy/piper) English model|
@@ -155,6 +167,15 @@ curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-reco
 curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/0-four-speakers-zh.wav
 
 node ./test_offline_speaker_diarization.js
+```
+
+### Speech enhancement/denoising
+
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/gtcrn_simple.onnx
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/inp_16k.wav
+
+node ./test_offline_speech_enhancement_gtcrn.js
 ```
 
 ### Voice Activity detection (VAD)
@@ -187,6 +208,22 @@ tar xvf sherpa-onnx-ced-mini-audio-tagging-2024-09-14.tar.bz2
 rm sherpa-onnx-ced-mini-audio-tagging-2024-09-14.tar.bz2
 
 node ./test_audio_tagging_ced.js
+```
+
+### Streaming speech recognition with Zipformer transducer with homophone replacer
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2
+tar xvf sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2
+rm sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/dict.tar.bz2
+tar xf dict.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/replace.fst
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/test-hr.wav
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/lexicon.txt
+
+node ./test_asr_streaming_transducer_with_hr.js
 ```
 
 ### Streaming speech recognition with Zipformer transducer
@@ -252,6 +289,15 @@ npm install naudiodon2
 node ./test_vad_asr_non_streaming_transducer_microphone.js
 ```
 
+### Non-streaming speech recognition with FireRedAsr
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+tar xvf sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+rm sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+
+node ./test_asr_non_streaming_fire_red_asr.js
+```
+
 ### Non-streaming speech recognition with Whisper
 
 ```bash
@@ -306,6 +352,26 @@ wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_v
 node ./test_vad_with_non_streaming_asr_whisper.js
 ```
 
+### Non-streaming speech recognition with Dolphin CTC models
+
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+tar xvf sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+rm sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+
+node ./test_asr_non_streaming_dolphin_ctc.js
+```
+
+### Non-streaming speech recognition with NeMo parakeet-tdt-0.6b-v2 models
+
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2
+tar xvf sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2
+rm sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8.tar.bz2
+
+node ./test_asr_non_streaming_nemo_parakeet_tdt_v2.js
+```
+
 ### Non-streaming speech recognition with NeMo CTC models
 
 ```bash
@@ -334,6 +400,22 @@ npm install naudiodon2
 node ./test_vad_asr_non_streaming_paraformer_microphone.js
 ```
 
+### Non-streaming speech recognition with SenseVoice with homophone replacer
+```bash
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+tar xvf sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+rm sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/dict.tar.bz2
+tar xf dict.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/replace.fst
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/test-hr.wav
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/lexicon.txt
+
+node ./test_asr_non_streaming_sense_voice_with_hr.js
+```
+
 ### Non-streaming speech recognition with SenseVoice
 
 ```bash
@@ -346,6 +428,16 @@ node ./test_asr_non_streaming_sense_voice.js
 # To run VAD + non-streaming ASR with Paraformer using a microphone
 npm install naudiodon2
 node ./test_vad_asr_non_streaming_sense_voice_microphone.js
+```
+
+### Text-to-speech with Kokoro TTS models (Chinese + English TTS)
+
+```bash
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2
+tar xf kokoro-multi-lang-v1_0.tar.bz2
+rm kokoro-multi-lang-v1_0.tar.bz2
+
+node ./test_tts_non_streaming_kokoro_zh_en.js
 ```
 
 ### Text-to-speech with Kokoro TTS models (English TTS)
@@ -364,7 +456,7 @@ wget https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/matcha-i
 tar xf matcha-icefall-en_US-ljspeech.tar.bz2
 rm matcha-icefall-en_US-ljspeech.tar.bz2
 
-wget https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_v2.onnx
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
 
 node ./test_tts_non_streaming_matcha_icefall_en.js
 ```
@@ -375,7 +467,7 @@ wget https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/matcha-i
 tar xvf matcha-icefall-zh-baker.tar.bz2
 rm matcha-icefall-zh-baker.tar.bz2
 
-wget https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_v2.onnx
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
 
 node ./test_tts_non_streaming_matcha_icefall_zh.js
 ```

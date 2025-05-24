@@ -131,7 +131,7 @@ func getTtsFor_matcha_icefall_zh_baker() -> SherpaOnnxOfflineTtsWrapper {
   // please see https://k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/matcha.html#matcha-icefall-zh-baker-chinese-1-female-speaker
 
   let acousticModel = getResource("model-steps-3", "onnx")
-  let vocoder = getResource("hifigan_v2", "onnx")
+  let vocoder = getResource("vocos-22khz-univ", "onnx")
 
   let tokens = getResource("tokens", "txt")
   let lexicon = getResource("lexicon", "txt")
@@ -180,10 +180,43 @@ func getTtsFor_kokoro_en_v0_19() -> SherpaOnnxOfflineTtsWrapper {
   return SherpaOnnxOfflineTtsWrapper(config: &config)
 }
 
+func getTtsFor_kokoro_multi_lang_v1_0() -> SherpaOnnxOfflineTtsWrapper {
+  // please see https://k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/kokoro.html
+
+  let model = getResource("model", "onnx")
+  let voices = getResource("voices", "bin")
+
+  // tokens.txt
+  let tokens = getResource("tokens", "txt")
+
+  let lexicon_en = getResource("lexicon-us-en", "txt")
+  let lexicon_zh = getResource("lexicon-zh", "txt")
+  let lexicon = "\(lexicon_en),\(lexicon_zh)"
+
+  // in this case, we don't need lexicon.txt
+  let dataDir = resourceURL(to: "espeak-ng-data")
+  let dictDir = resourceURL(to: "dict")
+
+  let numFst = getResource("number-zh", "fst")
+  let dateFst = getResource("date-zh", "fst")
+  let phoneFst = getResource("phone-zh", "fst")
+  let ruleFsts = "\(dateFst),\(phoneFst),\(numFst)"
+
+  let kokoro = sherpaOnnxOfflineTtsKokoroModelConfig(
+    model: model, voices: voices, tokens: tokens, dataDir: dataDir,
+    dictDir: dictDir, lexicon: lexicon)
+  let modelConfig = sherpaOnnxOfflineTtsModelConfig(kokoro: kokoro)
+  var config = sherpaOnnxOfflineTtsConfig(model: modelConfig)
+
+  return SherpaOnnxOfflineTtsWrapper(config: &config)
+}
+
 func createOfflineTts() -> SherpaOnnxOfflineTtsWrapper {
   // Please enable only one of them
 
-  return getTtsFor_kokoro_en_v0_19()
+  return getTtsFor_kokoro_multi_lang_v1_0()
+
+  // return getTtsFor_kokoro_en_v0_19()
 
   // return getTtsFor_matcha_icefall_zh_baker()
 

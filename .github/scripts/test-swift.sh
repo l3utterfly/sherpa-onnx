@@ -7,9 +7,26 @@ echo "pwd: $PWD"
 cd swift-api-examples
 ls -lh
 
+./run-decode-file-sense-voice-with-hr.sh
+rm -rf sherpa-onnx-sense-voice-*
+rm -rf dict lexicon.txt replace.fst test-hr.wav
+
+./run-dolphin-ctc-asr.sh
+rm -rf sherpa-onnx-dolphin-*
+
+./run-speech-enhancement-gtcrn.sh
+ls -lh *.wav
+
+./run-fire-red-asr.sh
+rm -rf sherpa-onnx-fire-red-asr-*
+
 ./run-tts-vits.sh
 ls -lh
 rm -rf vits-piper-*
+
+./run-tts-kokoro-zh-en.sh
+ls -lh
+rm -rf kokoro-multi-*
 
 ./run-tts-kokoro-en.sh
 ls -lh

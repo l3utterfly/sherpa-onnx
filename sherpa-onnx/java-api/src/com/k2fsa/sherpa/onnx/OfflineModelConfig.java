@@ -6,9 +6,11 @@ public class OfflineModelConfig {
     private final OfflineTransducerModelConfig transducer;
     private final OfflineParaformerModelConfig paraformer;
     private final OfflineWhisperModelConfig whisper;
+    private final OfflineFireRedAsrModelConfig fireRedAsr;
     private final OfflineMoonshineModelConfig moonshine;
     private final OfflineNemoEncDecCtcModelConfig nemo;
     private final OfflineSenseVoiceModelConfig senseVoice;
+    private final OfflineDolphinModelConfig dolphin;
     private final String teleSpeech;
     private final String tokens;
     private final int numThreads;
@@ -23,9 +25,11 @@ public class OfflineModelConfig {
         this.transducer = builder.transducer;
         this.paraformer = builder.paraformer;
         this.whisper = builder.whisper;
+        this.fireRedAsr = builder.fireRedAsr;
         this.moonshine = builder.moonshine;
         this.nemo = builder.nemo;
         this.senseVoice = builder.senseVoice;
+        this.dolphin = builder.dolphin;
         this.teleSpeech = builder.teleSpeech;
         this.tokens = builder.tokens;
         this.numThreads = builder.numThreads;
@@ -58,6 +62,10 @@ public class OfflineModelConfig {
 
     public OfflineSenseVoiceModelConfig getSenseVoice() {
         return senseVoice;
+    }
+
+    public OfflineDolphinModelConfig getDolphin() {
+        return dolphin;
     }
 
     public String getTokens() {
@@ -96,9 +104,11 @@ public class OfflineModelConfig {
         private OfflineParaformerModelConfig paraformer = OfflineParaformerModelConfig.builder().build();
         private OfflineTransducerModelConfig transducer = OfflineTransducerModelConfig.builder().build();
         private OfflineWhisperModelConfig whisper = OfflineWhisperModelConfig.builder().build();
+        private OfflineFireRedAsrModelConfig fireRedAsr = OfflineFireRedAsrModelConfig.builder().build();
         private OfflineMoonshineModelConfig moonshine = OfflineMoonshineModelConfig.builder().build();
         private OfflineNemoEncDecCtcModelConfig nemo = OfflineNemoEncDecCtcModelConfig.builder().build();
         private OfflineSenseVoiceModelConfig senseVoice = OfflineSenseVoiceModelConfig.builder().build();
+        private OfflineDolphinModelConfig dolphin = OfflineDolphinModelConfig.builder().build();
         private String teleSpeech = "";
         private String tokens = "";
         private int numThreads = 1;
@@ -114,6 +124,11 @@ public class OfflineModelConfig {
 
         public Builder setTransducer(OfflineTransducerModelConfig transducer) {
             this.transducer = transducer;
+            return this;
+        }
+
+        public Builder setDolphin(OfflineDolphinModelConfig dolphin) {
+            this.dolphin = dolphin;
             return this;
         }
 
@@ -134,6 +149,11 @@ public class OfflineModelConfig {
 
         public Builder setWhisper(OfflineWhisperModelConfig whisper) {
             this.whisper = whisper;
+            return this;
+        }
+
+        public Builder setFireRedAsr(OfflineFireRedAsrModelConfig fireRedAsr) {
+            this.fireRedAsr = fireRedAsr;
             return this;
         }
 

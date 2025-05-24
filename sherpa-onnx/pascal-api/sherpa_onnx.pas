@@ -82,6 +82,8 @@ type
     Tokens: AnsiString;
     DataDir: AnsiString;
     LengthScale: Single;
+    DictDir: AnsiString;
+    Lexicon: AnsiString;
 
     function ToString: AnsiString;
     class operator Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineTtsKokoroModelConfig);
@@ -104,6 +106,7 @@ type
     RuleFsts: AnsiString;
     MaxNumSentences: Integer;
     RuleFars: AnsiString;
+    SilenceScale: Single;
 
     function ToString: AnsiString;
     class operator Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineTtsConfig);
@@ -267,6 +270,11 @@ type
     function ToString: AnsiString;
   end;
 
+  TSherpaOnnxOfflineDolphinModelConfig = record
+    Model: AnsiString;
+    function ToString: AnsiString;
+  end;
+
   TSherpaOnnxOfflineWhisperModelConfig = record
     Encoder: AnsiString;
     Decoder: AnsiString;
@@ -282,6 +290,12 @@ type
     Encoder: AnsiString;
     UncachedDecoder: AnsiString;
     CachedDecoder: AnsiString;
+    function ToString: AnsiString;
+  end;
+
+  TSherpaOnnxOfflineFireRedAsrModelConfig = record
+    Encoder: AnsiString;
+    Decoder: AnsiString;
     function ToString: AnsiString;
   end;
 
@@ -321,6 +335,8 @@ type
     TeleSpeechCtc: AnsiString;
     SenseVoice: TSherpaOnnxOfflineSenseVoiceModelConfig;
     Moonshine: TSherpaOnnxOfflineMoonshineModelConfig;
+    FireRedAsr: TSherpaOnnxOfflineFireRedAsrModelConfig;
+    Dolphin: TSherpaOnnxOfflineDolphinModelConfig;
     class operator Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineModelConfig);
     function ToString: AnsiString;
   end;
@@ -505,6 +521,44 @@ type
     property GetSampleRate: Integer Read SampleRate;
   end;
 
+  TSherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig = record
+    Model: AnsiString;
+    function ToString: AnsiString;
+  end;
+
+  TSherpaOnnxOfflineSpeechDenoiserModelConfig = record
+    Gtcrn: TSherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig;
+    NumThreads: Integer;
+    Debug: Boolean;
+    Provider: AnsiString;
+    function ToString: AnsiString;
+    class operator Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineSpeechDenoiserModelConfig);
+  end;
+
+  TSherpaOnnxOfflineSpeechDenoiserConfig = record
+    Model: TSherpaOnnxOfflineSpeechDenoiserModelConfig;
+    function ToString: AnsiString;
+  end;
+
+  TSherpaOnnxDenoisedAudio = record
+    Samples: array of Single;
+    SampleRate: Integer;
+  end;
+
+  TSherpaOnnxOfflineSpeechDenoiser = class
+  private
+   Handle: Pointer;
+   SampleRate: Integer;
+   _Config: TSherpaOnnxOfflineSpeechDenoiserConfig;
+  public
+    constructor Create(Config: TSherpaOnnxOfflineSpeechDenoiserConfig);
+    destructor Destroy; override;
+
+    function Run(Samples: array of Single; InputSampleRate: Integer): TSherpaOnnxDenoisedAudio;
+
+    property GetHandle: Pointer Read Handle;
+    property GetSampleRate: Integer Read SampleRate;
+  end;
 
   { It supports reading a single channel wave with 16-bit encoded samples.
     Samples are normalized to the range [-1, 1].
@@ -646,12 +700,19 @@ type
   SherpaOnnxOfflineNemoEncDecCtcModelConfig = record
     Model: PAnsiChar;
   end;
+  SherpaOnnxOfflineDolphinModelConfig = record
+    Model: PAnsiChar;
+  end;
   SherpaOnnxOfflineWhisperModelConfig = record
     Encoder: PAnsiChar;
     Decoder: PAnsiChar;
     Language: PAnsiChar;
     Task: PAnsiChar;
     TailPaddings: cint32;
+  end;
+  SherpaOnnxOfflineFireRedAsrModelConfig = record
+    Encoder: PAnsiChar;
+    Decoder: PAnsiChar;
   end;
   SherpaOnnxOfflineMoonshineModelConfig = record
     Preprocessor: PAnsiChar;
@@ -687,6 +748,8 @@ type
     TeleSpeechCtc: PAnsiChar;
     SenseVoice:  SherpaOnnxOfflineSenseVoiceModelConfig;
     Moonshine: SherpaOnnxOfflineMoonshineModelConfig;
+    FireRedAsr: SherpaOnnxOfflineFireRedAsrModelConfig;
+    Dolphin: SherpaOnnxOfflineDolphinModelConfig;
   end;
 
   SherpaOnnxOfflineRecognizerConfig = record
@@ -757,6 +820,8 @@ type
     Tokens: PAnsiChar;
     DataDir: PAnsiChar;
     LengthScale: cfloat;
+    DictDir: PAnsiChar;
+    Lexicon: PAnsiChar;
   end;
 
   SherpaOnnxOfflineTtsModelConfig = record
@@ -773,6 +838,7 @@ type
     RuleFsts: PAnsiChar;
     MaxNumSentences: cint32;
     RuleFars: PAnsiChar;
+    SilenceScale: cfloat;
   end;
 
   PSherpaOnnxOfflineTtsConfig = ^SherpaOnnxOfflineTtsConfig;
@@ -833,6 +899,31 @@ type
 
   PSherpaOnnxOfflineSpeakerDiarizationConfig = ^SherpaOnnxOfflineSpeakerDiarizationConfig;
 
+  SherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig = record
+    Model: PAnsiChar;
+  end;
+
+  SherpaOnnxOfflineSpeechDenoiserModelConfig = record
+    Gtcrn: SherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig;
+    NumThreads: cint32;
+    Debug: cint32;
+    Provider: PAnsiChar;
+  end;
+
+  SherpaOnnxOfflineSpeechDenoiserConfig = record
+    Model: SherpaOnnxOfflineSpeechDenoiserModelConfig;
+  end;
+
+  PSherpaOnnxOfflineSpeechDenoiserConfig = ^SherpaOnnxOfflineSpeechDenoiserConfig;
+
+  SherpaOnnxDenoisedAudio = record
+    Samples: pcfloat;
+    N: cint32;
+    SampleRate: cint32;
+  end;
+
+  PSherpaOnnxDenoisedAudio = ^SherpaOnnxDenoisedAudio;
+
 function SherpaOnnxCreateLinearResampler(SampleRateInHz: cint32;
   SampleRateOutHz: cint32;
   FilterCutoffHz: cfloat;
@@ -852,6 +943,22 @@ procedure SherpaOnnxLinearResamplerResampleFree(P: PSherpaOnnxResampleOut); cdec
   external SherpaOnnxLibName;
 
 procedure SherpaOnnxLinearResamplerReset(P: Pointer); cdecl;
+  external SherpaOnnxLibName;
+
+function SherpaOnnxCreateOfflineSpeechDenoiser(Config: PSherpaOnnxOfflineSpeechDenoiserConfig): Pointer; cdecl;
+  external SherpaOnnxLibName;
+
+procedure SherpaOnnxDestroyOfflineSpeechDenoiser(P: Pointer); cdecl;
+  external SherpaOnnxLibName;
+
+function SherpaOnnxOfflineSpeechDenoiserGetSampleRate(P: Pointer): cint32; cdecl;
+  external SherpaOnnxLibName;
+
+function SherpaOnnxOfflineSpeechDenoiserRun(P: Pointer;
+  Samples: pcfloat; N: cint32;SampleRate: cint32):PSherpaOnnxDenoisedAudio; cdecl;
+  external SherpaOnnxLibName;
+
+procedure SherpaOnnxDestroyDenoisedAudio(Audio: Pointer); cdecl;
   external SherpaOnnxLibName;
 
 function SherpaOnnxCreateOfflineSpeakerDiarization(Config: PSherpaOnnxOfflineSpeakerDiarizationConfig): Pointer; cdecl;
@@ -1364,6 +1471,12 @@ begin
     [Self.Model]);
 end;
 
+function TSherpaOnnxOfflineDolphinModelConfig.ToString: AnsiString;
+begin
+  Result := Format('TSherpaOnnxOfflineDolphinModelConfig(Model := %s)',
+    [Self.Model]);
+end;
+
 function TSherpaOnnxOfflineWhisperModelConfig.ToString: AnsiString;
 begin
   Result := Format('TSherpaOnnxOfflineWhisperModelConfig(' +
@@ -1374,6 +1487,14 @@ begin
     'TailPaddings := %d' +
     ')',
     [Self.Encoder, Self.Decoder, Self.Language, Self.Task, Self.TailPaddings]);
+end;
+
+function TSherpaOnnxOfflineFireRedAsrModelConfig.ToString: AnsiString;
+begin
+  Result := Format('TSherpaOnnxOfflineFireRedAsrModelConfig(' +
+    'Encoder := %s, ' +
+    'Decoder := %s)',
+    [Self.Encoder, Self.Decoder]);
 end;
 
 function TSherpaOnnxOfflineMoonshineModelConfig.ToString: AnsiString;
@@ -1428,13 +1549,16 @@ begin
     'BpeVocab := %s, ' +
     'TeleSpeechCtc := %s, ' +
     'SenseVoice := %s, ' +
-    'Moonshine := %s' +
+    'Moonshine := %s, ' +
+    'FireRedAsr := %s, ' +
+    'Dolphin := %s' +
     ')',
     [Self.Transducer.ToString, Self.Paraformer.ToString,
      Self.NeMoCtc.ToString, Self.Whisper.ToString, Self.Tdnn.ToString,
      Self.Tokens, Self.NumThreads, Self.Debug.ToString, Self.Provider,
      Self.ModelType, Self.ModelingUnit, Self.BpeVocab,
-     Self.TeleSpeechCtc, Self.SenseVoice.ToString, Self.Moonshine.ToString
+     Self.TeleSpeechCtc, Self.SenseVoice.ToString, Self.Moonshine.ToString,
+     Self.FireRedAsr.ToString, Self.Dolphin.ToString
      ]);
 end;
 
@@ -1499,6 +1623,11 @@ begin
   C.ModelConfig.Moonshine.Encoder := PAnsiChar(Config.ModelConfig.Moonshine.Encoder);
   C.ModelConfig.Moonshine.UncachedDecoder := PAnsiChar(Config.ModelConfig.Moonshine.UncachedDecoder);
   C.ModelConfig.Moonshine.CachedDecoder := PAnsiChar(Config.ModelConfig.Moonshine.CachedDecoder);
+
+  C.ModelConfig.FireRedAsr.Encoder := PAnsiChar(Config.ModelConfig.FireRedAsr.Encoder);
+  C.ModelConfig.FireRedAsr.Decoder := PAnsiChar(Config.ModelConfig.FireRedAsr.Decoder);
+
+  C.ModelConfig.Dolphin.Model := PAnsiChar(Config.ModelConfig.Dolphin.Model);
 
   C.LMConfig.Model := PAnsiChar(Config.LMConfig.Model);
   C.LMConfig.Scale := Config.LMConfig.Scale;
@@ -1931,9 +2060,12 @@ begin
     'Voices := %s, ' +
     'Tokens := %s, ' +
     'DataDir := %s, ' +
-    'LengthScale := %.2f' +
+    'LengthScale := %.2f, ' +
+    'DictDir := %s, ' +
+    'Lexicon := %s' +
     ')',
-    [Self.Model, Self.Voices, Self.Tokens, Self.DataDir, Self.LengthScale]);
+    [Self.Model, Self.Voices, Self.Tokens, Self.DataDir, Self.LengthScale,
+     Self.DictDir, Self.Lexicon]);
 end;
 
 class operator TSherpaOnnxOfflineTtsKokoroModelConfig.Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineTtsKokoroModelConfig);
@@ -1969,15 +2101,17 @@ begin
     'Model := %s, ' +
     'RuleFsts := %s, ' +
     'MaxNumSentences := %d, ' +
-    'RuleFars := %s' +
+    'RuleFars := %s, ' +
+    'SilenceScale := %f' +
     ')',
-    [Self.Model.ToString, Self.RuleFsts, Self.MaxNumSentences, Self.RuleFars
-    ]);
+    [Self.Model.ToString, Self.RuleFsts, Self.MaxNumSentences, Self.RuleFars,
+     Self.SilenceScale]);
 end;
 
 class operator TSherpaOnnxOfflineTtsConfig.Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineTtsConfig);
 begin
   Dest.MaxNumSentences := 1;
+  Dest.SilenceScale := 0.2;
 end;
 
 constructor TSherpaOnnxOfflineTts.Create(Config: TSherpaOnnxOfflineTtsConfig);
@@ -2010,6 +2144,8 @@ begin
   C.Model.Kokoro.Tokens := PAnsiChar(Config.Model.Kokoro.Tokens);
   C.Model.Kokoro.DataDir := PAnsiChar(Config.Model.Kokoro.DataDir);
   C.Model.Kokoro.LengthScale := Config.Model.Kokoro.LengthScale;
+  C.Model.Kokoro.DictDir := PAnsiChar(Config.Model.Kokoro.DictDir);
+  C.Model.Kokoro.Lexicon := PAnsiChar(Config.Model.Kokoro.Lexicon);
 
   C.Model.NumThreads := Config.Model.NumThreads;
   C.Model.Provider := PAnsiChar(Config.Model.Provider);
@@ -2018,6 +2154,7 @@ begin
   C.RuleFsts := PAnsiChar(Config.RuleFsts);
   C.MaxNumSentences := Config.MaxNumSentences;
   C.RuleFars := PAnsiChar(Config.RuleFars);
+  C.SilenceScale := Config.SilenceScale;
 
   Self.Handle := SherpaOnnxCreateOfflineTts(@C);
 
@@ -2317,6 +2454,81 @@ begin
 
   SherpaOnnxOfflineSpeakerDiarizationDestroySegment(Segments);
   SherpaOnnxOfflineSpeakerDiarizationDestroyResult(R);
+end;
+
+function TSherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig.ToString: AnsiString;
+begin
+  Result := Format('TSherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig(' +
+    'Model := %s)', [Self.Model]);
+end;
+
+function TSherpaOnnxOfflineSpeechDenoiserModelConfig.ToString: AnsiString;
+begin
+  Result := Format('TSherpaOnnxOfflineSpeechDenoiserModelConfig(' +
+    'Gtcrn := %s, '+
+    'NumThreads := %d, '+
+    'Debug := %s, '+
+    'Provider := %s)',
+    [Self.Gtcrn.ToString, Self.NumThreads, Self.Debug.ToString, Self.Provider]);
+end;
+
+class operator TSherpaOnnxOfflineSpeechDenoiserModelConfig.Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineSpeechDenoiserModelConfig);
+begin
+  Dest.NumThreads := 1;
+  Dest.Debug := False;
+  Dest.Provider := 'cpu';
+end;
+
+function TSherpaOnnxOfflineSpeechDenoiserConfig.ToString: AnsiString;
+begin
+  Result := Format('TSherpaOnnxOfflineSpeechDenoiserConfig(' +
+    'Model := %s)', [Self.Model.ToString]);
+end;
+
+constructor TSherpaOnnxOfflineSpeechDenoiser.Create(Config: TSherpaOnnxOfflineSpeechDenoiserConfig);
+var
+  C: SherpaOnnxOfflineSpeechDenoiserConfig;
+begin
+  C := Default(SherpaOnnxOfflineSpeechDenoiserConfig);
+  C.Model.Gtcrn.Model := PAnsiChar(Config.Model.Gtcrn.Model);
+  C.Model.NumThreads := Config.Model.NumThreads;
+  C.Model.Debug := Ord(Config.Model.Debug);
+  C.Model.Provider := PAnsiChar(Config.Model.Provider);
+
+  Self.Handle := SherpaOnnxCreateOfflineSpeechDenoiser(@C);
+  Self._Config := Config;
+  Self.SampleRate :=  0;
+
+  if Self.Handle <> nil then
+    begin
+      Self.SampleRate := SherpaOnnxOfflineSpeechDenoiserGetSampleRate(Self.Handle);
+    end;
+end;
+
+destructor TSherpaOnnxOfflineSpeechDenoiser.Destroy;
+begin
+  SherpaOnnxDestroyOfflineSpeechDenoiser(Self.Handle);
+  Self.Handle := nil;
+end;
+
+function TSherpaOnnxOfflineSpeechDenoiser.Run(Samples: array of Single; InputSampleRate: Integer): TSherpaOnnxDenoisedAudio;
+var
+  Audio: PSherpaOnnxDenoisedAudio;
+  I: Integer;
+begin
+  Result := Default(TSherpaOnnxDenoisedAudio);
+
+  Audio := SherpaOnnxOfflineSpeechDenoiserRun(Self.Handle, pcfloat(Samples), Length(Samples), InputSampleRate);
+
+  SetLength(Result.Samples, Audio^.N);
+  Result.SampleRate := Audio^.SampleRate;
+
+  for I := Low(Result.Samples) to High(Result.Samples) do
+  begin
+    Result.Samples[I] := Audio^.Samples[I];
+  end;
+
+  SherpaOnnxDestroyDenoisedAudio(audio);
 end;
 
 end.

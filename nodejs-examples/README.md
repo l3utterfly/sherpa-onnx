@@ -1,6 +1,8 @@
 # Introduction
 
-Note: You need `Node >= 18`.
+Note: You need `Node >= 18`. 
+
+Note: For Mac M1 and other silicon chip series, do check the example `test-online-paraformer-microphone-mic.js` 
 
 This directory contains nodejs examples for [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx).
 
@@ -21,6 +23,16 @@ npm i
 In the following, we describe how to use [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)
 for text-to-speech and speech-to-text.
 
+
+# Speech enhancement
+
+In the following, we demonstrate how to run speech enhancement.
+
+```bash
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/gtcrn_simple.onnx
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/speech-enhancement-models/inp_16k.wav
+node ./test-offline-speech-enhancement-gtcrn.js
+```
 
 # Speaker diarization
 
@@ -71,7 +83,7 @@ wget https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/matcha-i
 tar xvf matcha-icefall-zh-baker.tar.bz2
 rm matcha-icefall-zh-baker.tar.bz2
 
-wget https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_v2.onnx
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
 
 node ./test-offline-tts-matcha-zh.js
 ```
@@ -89,7 +101,7 @@ wget https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/matcha-i
 tar xf matcha-icefall-en_US-ljspeech.tar.bz2
 rm matcha-icefall-en_US-ljspeech.tar.bz2
 
-wget https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_v2.onnx
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/vocos-22khz-univ.onnx
 
 node ./test-offline-tts-matcha-en.js
 ```
@@ -128,6 +140,20 @@ node ./test-offline-tts-vits-zh.js
 In the following, we demonstrate how to decode files and how to perform
 speech recognition with a microphone with `nodejs`.
 
+## ./test-offline-dolphin-ctc.js
+
+[./test-offline-dolphin-ctc.js](./test-offline-dolphin-ctc.js) demonstrates
+how to decode a file with a [Dolphin](https://github.com/DataoceanAI/Dolphin) CTC model.
+
+You can use the following command to run it:
+
+```bash
+wget -q https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+tar xvf sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+rm sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02.tar.bz2
+node ./test-offline-dolphin-ctc.js
+```
+
 ## ./test-offline-nemo-ctc.js
 
 [./test-offline-nemo-ctc.js](./test-offline-nemo-ctc.js) demonstrates
@@ -156,10 +182,32 @@ tar xvf sherpa-onnx-paraformer-zh-2023-09-14.tar.bz2
 node ./test-offline-paraformer.js
 ```
 
+## ./test-offline-sense-voice-with-hr.js
+
+[./test-offline-sense-voice-with-hr.js](./test-offline-sense-voice-with-hr.js) demonstrates
+how to decode a file with a non-streaming SenseVoice model with homophone replacer.
+
+You can use the following command to run it:
+
+```bash
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+tar xvf sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+rm sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/dict.tar.bz2
+tar xf dict.tar.bz2
+
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/replace.fst
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/test-hr.wav
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/hr-files/lexicon.txt
+
+node ./test-offline-sense-voice-with-hr.js
+```
+
 ## ./test-offline-sense-voice.js
 
 [./test-offline-sense-voice.js](./test-offline-sense-voice.js) demonstrates
-how to decode a file with a non-streaming Paraformer model.
+how to decode a file with a non-streaming SenseVoice model.
 
 You can use the following command to run it:
 
@@ -216,6 +264,21 @@ tar xvf sherpa-onnx-whisper-tiny.en.tar.bz2
 node ./test-offline-whisper.js
 ```
 
+## ./test-offline-fire-red-asr.js
+
+[./test-offline-fire-red-asr.js](./test-offline-fire-red-asr.js) demonstrates
+how to decode a file with a FireRedAsr AED model.
+
+You can use the following command to run it:
+
+```bash
+wget https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+tar xvf sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+rm sherpa-onnx-fire-red-asr-large-zh_en-2025-02-16.tar.bz2
+
+node ./test-offline-fire-red-asr.js
+```
+
 ## ./test-offline-moonshine.js
 
 [./test-offline-moonshine.js](./test-offline-moonshine.js) demonstrates
@@ -262,6 +325,25 @@ wget -q https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherp
 rm sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2
 node ./test-online-paraformer-microphone.js
 ```
+
+
+## ./test-online-paraformer-microphone-mic.js
+
+[./test-online-paraformer-microphone-mic.js](./test-online-paraformer-microphone-mic.js)
+demonstrates how to do real-time speech recognition from microphone
+with a streaming Paraformer model. In the code we use
+[sherpa-onnx-streaming-paraformer-bilingual-zh-en](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-paraformer/paraformer-models.html#csukuangfj-sherpa-onnx-streaming-paraformer-bilingual-zh-en-chinese-english).
+
+It uses `mic` for better compatibility, do check its [npm](https://www.npmjs.com/package/mic) before running it.
+
+You can use the following command to run it:
+
+```bash
+wget -q https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2
+rm sherpa-onnx-streaming-paraformer-bilingual-zh-en.tar.bz2
+node ./test-online-paraformer-microphone-mic.js
+```
+
 
 ## ./test-online-paraformer.js
 [./test-online-paraformer.js](./test-online-paraformer.js) demonstrates

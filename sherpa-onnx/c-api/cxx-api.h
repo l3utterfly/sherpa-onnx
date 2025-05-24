@@ -55,6 +55,12 @@ struct OnlineCtcFstDecoderConfig {
   int32_t max_active = 3000;
 };
 
+struct HomophoneReplacerConfig {
+  std::string dict_dir;
+  std::string lexicon;
+  std::string rule_fsts;
+};
+
 struct OnlineRecognizerConfig {
   FeatureConfig feat_config;
   OnlineModelConfig model_config;
@@ -81,6 +87,7 @@ struct OnlineRecognizerConfig {
   float blank_penalty = 0;
 
   std::string hotwords_buf;
+  HomophoneReplacerConfig hr;
 };
 
 struct OnlineRecognizerResult {
@@ -104,6 +111,7 @@ SHERPA_ONNX_API bool WriteWave(const std::string &filename, const Wave &wave);
 template <typename Derived, typename T>
 class SHERPA_ONNX_API MoveOnly {
  public:
+  MoveOnly() = default;
   explicit MoveOnly(const T *p) : p_(p) {}
 
   ~MoveOnly() { Destroy(); }
@@ -214,6 +222,11 @@ struct SHERPA_ONNX_API OfflineWhisperModelConfig {
   int32_t tail_paddings = -1;
 };
 
+struct SHERPA_ONNX_API OfflineFireRedAsrModelConfig {
+  std::string encoder;
+  std::string decoder;
+};
+
 struct SHERPA_ONNX_API OfflineTdnnModelConfig {
   std::string model;
 };
@@ -222,6 +235,10 @@ struct SHERPA_ONNX_API OfflineSenseVoiceModelConfig {
   std::string model;
   std::string language;
   bool use_itn = false;
+};
+
+struct SHERPA_ONNX_API OfflineDolphinModelConfig {
+  std::string model;
 };
 
 struct SHERPA_ONNX_API OfflineMoonshineModelConfig {
@@ -248,6 +265,8 @@ struct SHERPA_ONNX_API OfflineModelConfig {
   std::string telespeech_ctc;
   OfflineSenseVoiceModelConfig sense_voice;
   OfflineMoonshineModelConfig moonshine;
+  OfflineFireRedAsrModelConfig fire_red_asr;
+  OfflineDolphinModelConfig dolphin;
 };
 
 struct SHERPA_ONNX_API OfflineLMConfig {
@@ -269,6 +288,7 @@ struct SHERPA_ONNX_API OfflineRecognizerConfig {
   std::string rule_fsts;
   std::string rule_fars;
   float blank_penalty = 0;
+  HomophoneReplacerConfig hr;
 };
 
 struct SHERPA_ONNX_API OfflineRecognizerResult {
@@ -300,6 +320,8 @@ class SHERPA_ONNX_API OfflineRecognizer
   void Destroy(const SherpaOnnxOfflineRecognizer *p) const;
 
   OfflineStream CreateStream() const;
+
+  OfflineStream CreateStream(const std::string &hotwords) const;
 
   void Decode(const OfflineStream *s) const;
 
@@ -343,6 +365,8 @@ struct OfflineTtsKokoroModelConfig {
   std::string voices;
   std::string tokens;
   std::string data_dir;
+  std::string dict_dir;
+  std::string lexicon;
 
   float length_scale = 1.0;  // < 1, faster in speed; > 1, slower in speed
 };
@@ -361,6 +385,7 @@ struct OfflineTtsConfig {
   std::string rule_fsts;
   std::string rule_fars;
   int32_t max_num_sentences = 1;
+  float silence_scale = 0.2;
 };
 
 struct GeneratedAudio {
@@ -451,6 +476,142 @@ class SHERPA_ONNX_API KeywordSpotter
 
  private:
   explicit KeywordSpotter(const SherpaOnnxKeywordSpotter *p);
+};
+
+struct OfflineSpeechDenoiserGtcrnModelConfig {
+  std::string model;
+};
+
+struct OfflineSpeechDenoiserModelConfig {
+  OfflineSpeechDenoiserGtcrnModelConfig gtcrn;
+  int32_t num_threads = 1;
+  int32_t debug = false;
+  std::string provider = "cpu";
+};
+
+struct OfflineSpeechDenoiserConfig {
+  OfflineSpeechDenoiserModelConfig model;
+};
+
+struct DenoisedAudio {
+  std::vector<float> samples;  // in the range [-1, 1]
+  int32_t sample_rate;
+};
+
+class SHERPA_ONNX_API OfflineSpeechDenoiser
+    : public MoveOnly<OfflineSpeechDenoiser, SherpaOnnxOfflineSpeechDenoiser> {
+ public:
+  static OfflineSpeechDenoiser Create(
+      const OfflineSpeechDenoiserConfig &config);
+
+  void Destroy(const SherpaOnnxOfflineSpeechDenoiser *p) const;
+
+  DenoisedAudio Run(const float *samples, int32_t n, int32_t sample_rate) const;
+
+  int32_t GetSampleRate() const;
+
+ private:
+  explicit OfflineSpeechDenoiser(const SherpaOnnxOfflineSpeechDenoiser *p);
+};
+
+// ==============================
+// VAD
+// ==============================
+
+struct SileroVadModelConfig {
+  std::string model;
+  float threshold = 0.5;
+  float min_silence_duration = 0.5;
+  float min_speech_duration = 0.25;
+  int32_t window_size = 512;
+  float max_speech_duration = 20;
+};
+
+struct VadModelConfig {
+  SileroVadModelConfig silero_vad;
+
+  int32_t sample_rate = 16000;
+  int32_t num_threads = 1;
+  std::string provider = "cpu";
+  bool debug = false;
+};
+
+struct SpeechSegment {
+  int32_t start;
+  std::vector<float> samples;
+};
+
+class SHERPA_ONNX_API CircularBuffer
+    : public MoveOnly<CircularBuffer, SherpaOnnxCircularBuffer> {
+ public:
+  static CircularBuffer Create(int32_t capacity);
+
+  void Destroy(const SherpaOnnxCircularBuffer *p) const;
+
+  void Push(const float *p, int32_t n) const;
+
+  std::vector<float> Get(int32_t start_index, int32_t n) const;
+
+  void Pop(int32_t n) const;
+
+  int32_t Size() const;
+
+  int32_t Head() const;
+
+  void Reset() const;
+
+ private:
+  explicit CircularBuffer(const SherpaOnnxCircularBuffer *p);
+};
+
+class SHERPA_ONNX_API VoiceActivityDetector
+    : public MoveOnly<VoiceActivityDetector, SherpaOnnxVoiceActivityDetector> {
+ public:
+  static VoiceActivityDetector Create(const VadModelConfig &config,
+                                      float buffer_size_in_seconds);
+
+  void Destroy(const SherpaOnnxVoiceActivityDetector *p) const;
+
+  void AcceptWaveform(const float *samples, int32_t n) const;
+
+  bool IsEmpty() const;
+
+  bool IsDetected() const;
+
+  void Pop() const;
+
+  void Clear() const;
+
+  SpeechSegment Front() const;
+
+  void Reset() const;
+
+  void Flush() const;
+
+ private:
+  explicit VoiceActivityDetector(const SherpaOnnxVoiceActivityDetector *p);
+};
+
+class SHERPA_ONNX_API LinearResampler
+    : public MoveOnly<LinearResampler, SherpaOnnxLinearResampler> {
+ public:
+  LinearResampler() = default;
+  static LinearResampler Create(int32_t samp_rate_in_hz,
+                                int32_t samp_rate_out_hz,
+                                float filter_cutoff_hz, int32_t num_zeros);
+
+  void Destroy(const SherpaOnnxLinearResampler *p) const;
+
+  void Reset() const;
+
+  std::vector<float> Resample(const float *input, int32_t input_dim,
+                              bool flush) const;
+
+  int32_t GetInputSamplingRate() const;
+  int32_t GetOutputSamplingRate() const;
+
+ private:
+  explicit LinearResampler(const SherpaOnnxLinearResampler *p);
 };
 
 }  // namespace sherpa_onnx::cxx

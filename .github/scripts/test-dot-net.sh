@@ -2,8 +2,12 @@
 
 cd dotnet-examples/
 
-cd ./kokoro-tts
-./run-kokoro-en.sh
+cd ./speech-enhancement-gtcrn
+./run.sh
+ls -lh
+
+cd ../kokoro-tts
+./run-kokoro.sh
 ls -lh
 
 cd ../offline-tts
@@ -34,6 +38,13 @@ rm -fv *.wav
 rm -rfv sherpa-onnx-pyannote-*
 
 cd ../offline-decode-files
+
+./run-dolphin-ctc.sh
+rm -rf sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02
+
+./run-fire-red-asr.sh
+rm -rf sherpa-onnx-fire-red-asr-*
+
 ./run-moonshine.sh
 rm -rf sherpa-onnx-*
 

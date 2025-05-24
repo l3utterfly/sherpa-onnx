@@ -128,6 +128,17 @@ func sherpaOnnxOnlineCtcFstDecoderConfig(
     max_active: Int32(maxActive))
 }
 
+func sherpaOnnxHomophoneReplacerConfig(
+  dictDir: String = "",
+  lexicon: String = "",
+  ruleFsts: String = ""
+) -> SherpaOnnxHomophoneReplacerConfig {
+  return SherpaOnnxHomophoneReplacerConfig(
+    dict_dir: toCPointer(dictDir),
+    lexicon: toCPointer(lexicon),
+    rule_fsts: toCPointer(ruleFsts))
+}
+
 func sherpaOnnxOnlineRecognizerConfig(
   featConfig: SherpaOnnxFeatureConfig,
   modelConfig: SherpaOnnxOnlineModelConfig,
@@ -144,7 +155,8 @@ func sherpaOnnxOnlineRecognizerConfig(
   ruleFars: String = "",
   blankPenalty: Float = 0.0,
   hotwordsBuf: String = "",
-  hotwordsBufSize: Int = 0
+  hotwordsBufSize: Int = 0,
+  hr: SherpaOnnxHomophoneReplacerConfig = sherpaOnnxHomophoneReplacerConfig()
 ) -> SherpaOnnxOnlineRecognizerConfig {
   return SherpaOnnxOnlineRecognizerConfig(
     feat_config: featConfig,
@@ -162,7 +174,8 @@ func sherpaOnnxOnlineRecognizerConfig(
     rule_fars: toCPointer(ruleFars),
     blank_penalty: blankPenalty,
     hotwords_buf: toCPointer(hotwordsBuf),
-    hotwords_buf_size: Int32(hotwordsBufSize)
+    hotwords_buf_size: Int32(hotwordsBufSize),
+    hr: hr
   )
 }
 
@@ -341,6 +354,14 @@ func sherpaOnnxOfflineNemoEncDecCtcModelConfig(
   )
 }
 
+func sherpaOnnxOfflineDolphinModelConfig(
+  model: String = ""
+) -> SherpaOnnxOfflineDolphinModelConfig {
+  return SherpaOnnxOfflineDolphinModelConfig(
+    model: toCPointer(model)
+  )
+}
+
 func sherpaOnnxOfflineWhisperModelConfig(
   encoder: String = "",
   decoder: String = "",
@@ -354,6 +375,16 @@ func sherpaOnnxOfflineWhisperModelConfig(
     language: toCPointer(language),
     task: toCPointer(task),
     tail_paddings: Int32(tailPaddings)
+  )
+}
+
+func sherpaOnnxOfflineFireRedAsrModelConfig(
+  encoder: String = "",
+  decoder: String = ""
+) -> SherpaOnnxOfflineFireRedAsrModelConfig {
+  return SherpaOnnxOfflineFireRedAsrModelConfig(
+    encoder: toCPointer(encoder),
+    decoder: toCPointer(decoder)
   )
 }
 
@@ -416,7 +447,9 @@ func sherpaOnnxOfflineModelConfig(
   bpeVocab: String = "",
   teleSpeechCtc: String = "",
   senseVoice: SherpaOnnxOfflineSenseVoiceModelConfig = sherpaOnnxOfflineSenseVoiceModelConfig(),
-  moonshine: SherpaOnnxOfflineMoonshineModelConfig = sherpaOnnxOfflineMoonshineModelConfig()
+  moonshine: SherpaOnnxOfflineMoonshineModelConfig = sherpaOnnxOfflineMoonshineModelConfig(),
+  fireRedAsr: SherpaOnnxOfflineFireRedAsrModelConfig = sherpaOnnxOfflineFireRedAsrModelConfig(),
+  dolphin: SherpaOnnxOfflineDolphinModelConfig = sherpaOnnxOfflineDolphinModelConfig()
 ) -> SherpaOnnxOfflineModelConfig {
   return SherpaOnnxOfflineModelConfig(
     transducer: transducer,
@@ -433,7 +466,9 @@ func sherpaOnnxOfflineModelConfig(
     bpe_vocab: toCPointer(bpeVocab),
     telespeech_ctc: toCPointer(teleSpeechCtc),
     sense_voice: senseVoice,
-    moonshine: moonshine
+    moonshine: moonshine,
+    fire_red_asr: fireRedAsr,
+    dolphin: dolphin
   )
 }
 
@@ -447,7 +482,8 @@ func sherpaOnnxOfflineRecognizerConfig(
   hotwordsScore: Float = 1.5,
   ruleFsts: String = "",
   ruleFars: String = "",
-  blankPenalty: Float = 0.0
+  blankPenalty: Float = 0.0,
+  hr: SherpaOnnxHomophoneReplacerConfig = sherpaOnnxHomophoneReplacerConfig()
 ) -> SherpaOnnxOfflineRecognizerConfig {
   return SherpaOnnxOfflineRecognizerConfig(
     feat_config: featConfig,
@@ -459,7 +495,8 @@ func sherpaOnnxOfflineRecognizerConfig(
     hotwords_score: hotwordsScore,
     rule_fsts: toCPointer(ruleFsts),
     rule_fars: toCPointer(ruleFars),
-    blank_penalty: blankPenalty
+    blank_penalty: blankPenalty,
+    hr: hr
   )
 }
 
@@ -767,14 +804,18 @@ func sherpaOnnxOfflineTtsKokoroModelConfig(
   voices: String = "",
   tokens: String = "",
   dataDir: String = "",
-  lengthScale: Float = 1.0
+  lengthScale: Float = 1.0,
+  dictDir: String = "",
+  lexicon: String = ""
 ) -> SherpaOnnxOfflineTtsKokoroModelConfig {
   return SherpaOnnxOfflineTtsKokoroModelConfig(
     model: toCPointer(model),
     voices: toCPointer(voices),
     tokens: toCPointer(tokens),
     data_dir: toCPointer(dataDir),
-    length_scale: lengthScale
+    length_scale: lengthScale,
+    dict_dir: toCPointer(dictDir),
+    lexicon: toCPointer(lexicon)
   )
 }
 
@@ -800,13 +841,15 @@ func sherpaOnnxOfflineTtsConfig(
   model: SherpaOnnxOfflineTtsModelConfig,
   ruleFsts: String = "",
   ruleFars: String = "",
-  maxNumSentences: Int = 1
+  maxNumSentences: Int = 1,
+  silenceScale: Float = 0.2
 ) -> SherpaOnnxOfflineTtsConfig {
   return SherpaOnnxOfflineTtsConfig(
     model: model,
     rule_fsts: toCPointer(ruleFsts),
     max_num_sentences: Int32(maxNumSentences),
-    rule_fars: toCPointer(ruleFars)
+    rule_fars: toCPointer(ruleFars),
+    silence_scale: silenceScale
   )
 }
 
@@ -1307,5 +1350,103 @@ class SherpaOnnxOfflineSpeakerDiarizationWrapper {
     SherpaOnnxOfflineSpeakerDiarizationDestroyResult(result)
 
     return ans
+  }
+}
+
+func sherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig(model: String = "")
+  -> SherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig
+{
+  return SherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig(model: toCPointer(model))
+}
+
+func sherpaOnnxOfflineSpeechDenoiserModelConfig(
+  gtcrn: SherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig =
+    sherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig(),
+  numThreads: Int = 1,
+  provider: String = "cpu",
+  debug: Int = 0
+) -> SherpaOnnxOfflineSpeechDenoiserModelConfig {
+  return SherpaOnnxOfflineSpeechDenoiserModelConfig(
+    gtcrn: gtcrn,
+    num_threads: Int32(numThreads),
+    debug: Int32(debug),
+    provider: toCPointer(provider)
+  )
+}
+
+func sherpaOnnxOfflineSpeechDenoiserConfig(
+  model: SherpaOnnxOfflineSpeechDenoiserModelConfig =
+    sherpaOnnxOfflineSpeechDenoiserModelConfig()
+) -> SherpaOnnxOfflineSpeechDenoiserConfig {
+  return SherpaOnnxOfflineSpeechDenoiserConfig(
+    model: model)
+}
+
+class SherpaOnnxDenoisedAudioWrapper {
+  /// A pointer to the underlying counterpart in C
+  let audio: UnsafePointer<SherpaOnnxDenoisedAudio>!
+
+  init(audio: UnsafePointer<SherpaOnnxDenoisedAudio>!) {
+    self.audio = audio
+  }
+
+  deinit {
+    if let audio {
+      SherpaOnnxDestroyDenoisedAudio(audio)
+    }
+  }
+
+  var n: Int32 {
+    return audio.pointee.n
+  }
+
+  var sampleRate: Int32 {
+    return audio.pointee.sample_rate
+  }
+
+  var samples: [Float] {
+    if let p = audio.pointee.samples {
+      var samples: [Float] = []
+      for index in 0..<n {
+        samples.append(p[Int(index)])
+      }
+      return samples
+    } else {
+      let samples: [Float] = []
+      return samples
+    }
+  }
+
+  func save(filename: String) -> Int32 {
+    return SherpaOnnxWriteWave(audio.pointee.samples, n, sampleRate, toCPointer(filename))
+  }
+}
+
+class SherpaOnnxOfflineSpeechDenoiserWrapper {
+  /// A pointer to the underlying counterpart in C
+  let impl: OpaquePointer!
+
+  /// Constructor taking a model config
+  init(
+    config: UnsafePointer<SherpaOnnxOfflineSpeechDenoiserConfig>!
+  ) {
+    impl = SherpaOnnxCreateOfflineSpeechDenoiser(config)
+  }
+
+  deinit {
+    if let impl {
+      SherpaOnnxDestroyOfflineSpeechDenoiser(impl)
+    }
+  }
+
+  func run(samples: [Float], sampleRate: Int) -> SherpaOnnxDenoisedAudioWrapper {
+    let audio: UnsafePointer<SherpaOnnxDenoisedAudio>? = SherpaOnnxOfflineSpeechDenoiserRun(
+      impl, samples, Int32(samples.count), Int32(sampleRate))
+
+    return SherpaOnnxDenoisedAudioWrapper(audio: audio)
+  }
+
+  var sampleRate: Int {
+    return Int(SherpaOnnxOfflineSpeechDenoiserGetSampleRate(impl))
   }
 }

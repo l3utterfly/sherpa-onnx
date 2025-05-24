@@ -112,6 +112,12 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOnlineCtcFstDecoderConfig {
   int32_t max_active;
 } SherpaOnnxOnlineCtcFstDecoderConfig;
 
+SHERPA_ONNX_API typedef struct SherpaOnnxHomophoneReplacerConfig {
+  const char *dict_dir;
+  const char *lexicon;
+  const char *rule_fsts;
+} SherpaOnnxHomophoneReplacerConfig;
+
 SHERPA_ONNX_API typedef struct SherpaOnnxOnlineRecognizerConfig {
   SherpaOnnxFeatureConfig feat_config;
   SherpaOnnxOnlineModelConfig model_config;
@@ -157,6 +163,7 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOnlineRecognizerConfig {
   const char *hotwords_buf;
   /// byte size excluding the tailing '\0'
   int32_t hotwords_buf_size;
+  SherpaOnnxHomophoneReplacerConfig hr;
 } SherpaOnnxOnlineRecognizerConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOnlineRecognizerResult {
@@ -389,6 +396,11 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineWhisperModelConfig {
   int32_t tail_paddings;
 } SherpaOnnxOfflineWhisperModelConfig;
 
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineFireRedAsrModelConfig {
+  const char *encoder;
+  const char *decoder;
+} SherpaOnnxOfflineFireRedAsrModelConfig;
+
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineMoonshineModelConfig {
   const char *preprocessor;
   const char *encoder;
@@ -411,6 +423,10 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineSenseVoiceModelConfig {
   int32_t use_itn;
 } SherpaOnnxOfflineSenseVoiceModelConfig;
 
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineDolphinModelConfig {
+  const char *model;
+} SherpaOnnxOfflineDolphinModelConfig;
+
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineModelConfig {
   SherpaOnnxOfflineTransducerModelConfig transducer;
   SherpaOnnxOfflineParaformerModelConfig paraformer;
@@ -432,6 +448,8 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineModelConfig {
   const char *telespeech_ctc;
   SherpaOnnxOfflineSenseVoiceModelConfig sense_voice;
   SherpaOnnxOfflineMoonshineModelConfig moonshine;
+  SherpaOnnxOfflineFireRedAsrModelConfig fire_red_asr;
+  SherpaOnnxOfflineDolphinModelConfig dolphin;
 } SherpaOnnxOfflineModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineRecognizerConfig {
@@ -450,6 +468,8 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineRecognizerConfig {
   const char *rule_fsts;
   const char *rule_fars;
   float blank_penalty;
+
+  SherpaOnnxHomophoneReplacerConfig hr;
 } SherpaOnnxOfflineRecognizerConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineRecognizer
@@ -483,6 +503,16 @@ SHERPA_ONNX_API void SherpaOnnxDestroyOfflineRecognizer(
 ///         SherpaOnnxDestroyOfflineStream() to free it to avoid memory leak.
 SHERPA_ONNX_API const SherpaOnnxOfflineStream *SherpaOnnxCreateOfflineStream(
     const SherpaOnnxOfflineRecognizer *recognizer);
+
+/// Create an offline stream for accepting wave samples with the specified hot
+/// words.
+///
+/// @param recognizer  A pointer returned by SherpaOnnxCreateOfflineRecognizer()
+/// @return Return a pointer to an OfflineStream. The user has to invoke
+///         SherpaOnnxDestroyOfflineStream() to free it to avoid memory leak.
+SHERPA_ONNX_API const SherpaOnnxOfflineStream *
+SherpaOnnxCreateOfflineStreamWithHotwords(
+    const SherpaOnnxOfflineRecognizer *recognizer, const char *hotwords);
 
 /// Destroy an offline stream.
 ///
@@ -769,7 +799,7 @@ SHERPA_ONNX_API typedef struct SherpaOnnxSileroVadModelConfig {
   // in seconds
   float min_speech_duration;
 
-  int window_size;
+  int32_t window_size;
 
   // If a speech segment is longer than this value, then we increase
   // the threshold to 0.9. After finishing detecting the segment,
@@ -792,15 +822,15 @@ SHERPA_ONNX_API typedef struct SherpaOnnxCircularBuffer
 // Return an instance of circular buffer. The user has to use
 // SherpaOnnxDestroyCircularBuffer() to free the returned pointer to avoid
 // memory leak.
-SHERPA_ONNX_API SherpaOnnxCircularBuffer *SherpaOnnxCreateCircularBuffer(
+SHERPA_ONNX_API const SherpaOnnxCircularBuffer *SherpaOnnxCreateCircularBuffer(
     int32_t capacity);
 
 // Free the pointer returned by SherpaOnnxCreateCircularBuffer()
 SHERPA_ONNX_API void SherpaOnnxDestroyCircularBuffer(
-    SherpaOnnxCircularBuffer *buffer);
+    const SherpaOnnxCircularBuffer *buffer);
 
 SHERPA_ONNX_API void SherpaOnnxCircularBufferPush(
-    SherpaOnnxCircularBuffer *buffer, const float *p, int32_t n);
+    const SherpaOnnxCircularBuffer *buffer, const float *p, int32_t n);
 
 // Return n samples starting at the given index.
 //
@@ -808,27 +838,27 @@ SHERPA_ONNX_API void SherpaOnnxCircularBufferPush(
 // The user has to use SherpaOnnxCircularBufferFree() to free the returned
 // pointer to avoid memory leak.
 SHERPA_ONNX_API const float *SherpaOnnxCircularBufferGet(
-    SherpaOnnxCircularBuffer *buffer, int32_t start_index, int32_t n);
+    const SherpaOnnxCircularBuffer *buffer, int32_t start_index, int32_t n);
 
 // Free the pointer returned by SherpaOnnxCircularBufferGet().
 SHERPA_ONNX_API void SherpaOnnxCircularBufferFree(const float *p);
 
 // Remove n elements from the buffer
 SHERPA_ONNX_API void SherpaOnnxCircularBufferPop(
-    SherpaOnnxCircularBuffer *buffer, int32_t n);
+    const SherpaOnnxCircularBuffer *buffer, int32_t n);
 
 // Return number of elements in the buffer.
 SHERPA_ONNX_API int32_t
-SherpaOnnxCircularBufferSize(SherpaOnnxCircularBuffer *buffer);
+SherpaOnnxCircularBufferSize(const SherpaOnnxCircularBuffer *buffer);
 
 // Return the head of the buffer. It's always non-decreasing until you
 // invoke SherpaOnnxCircularBufferReset() which resets head to 0.
 SHERPA_ONNX_API int32_t
-SherpaOnnxCircularBufferHead(SherpaOnnxCircularBuffer *buffer);
+SherpaOnnxCircularBufferHead(const SherpaOnnxCircularBuffer *buffer);
 
 // Clear all elements in the buffer
 SHERPA_ONNX_API void SherpaOnnxCircularBufferReset(
-    SherpaOnnxCircularBuffer *buffer);
+    const SherpaOnnxCircularBuffer *buffer);
 
 SHERPA_ONNX_API typedef struct SherpaOnnxSpeechSegment {
   // The start index in samples of this segment
@@ -846,40 +876,40 @@ typedef struct SherpaOnnxVoiceActivityDetector SherpaOnnxVoiceActivityDetector;
 // Return an instance of VoiceActivityDetector.
 // The user has to use SherpaOnnxDestroyVoiceActivityDetector() to free
 // the returned pointer to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxVoiceActivityDetector *
+SHERPA_ONNX_API const SherpaOnnxVoiceActivityDetector *
 SherpaOnnxCreateVoiceActivityDetector(const SherpaOnnxVadModelConfig *config,
                                       float buffer_size_in_seconds);
 
 SHERPA_ONNX_API void SherpaOnnxDestroyVoiceActivityDetector(
-    SherpaOnnxVoiceActivityDetector *p);
+    const SherpaOnnxVoiceActivityDetector *p);
 
 SHERPA_ONNX_API void SherpaOnnxVoiceActivityDetectorAcceptWaveform(
-    SherpaOnnxVoiceActivityDetector *p, const float *samples, int32_t n);
+    const SherpaOnnxVoiceActivityDetector *p, const float *samples, int32_t n);
 
 // Return 1 if there are no speech segments available.
 // Return 0 if there are speech segments.
 SHERPA_ONNX_API int32_t
-SherpaOnnxVoiceActivityDetectorEmpty(SherpaOnnxVoiceActivityDetector *p);
+SherpaOnnxVoiceActivityDetectorEmpty(const SherpaOnnxVoiceActivityDetector *p);
 
 // Return 1 if there is voice detected.
 // Return 0 if voice is silent.
-SHERPA_ONNX_API int32_t
-SherpaOnnxVoiceActivityDetectorDetected(SherpaOnnxVoiceActivityDetector *p);
+SHERPA_ONNX_API int32_t SherpaOnnxVoiceActivityDetectorDetected(
+    const SherpaOnnxVoiceActivityDetector *p);
 
 // Return the first speech segment.
 // It throws if SherpaOnnxVoiceActivityDetectorEmpty() returns 1.
 SHERPA_ONNX_API void SherpaOnnxVoiceActivityDetectorPop(
-    SherpaOnnxVoiceActivityDetector *p);
+    const SherpaOnnxVoiceActivityDetector *p);
 
 // Clear current speech segments.
 SHERPA_ONNX_API void SherpaOnnxVoiceActivityDetectorClear(
-    SherpaOnnxVoiceActivityDetector *p);
+    const SherpaOnnxVoiceActivityDetector *p);
 
 // Return the first speech segment.
 // The user has to use SherpaOnnxDestroySpeechSegment() to free the returned
 // pointer to avoid memory leak.
 SHERPA_ONNX_API const SherpaOnnxSpeechSegment *
-SherpaOnnxVoiceActivityDetectorFront(SherpaOnnxVoiceActivityDetector *p);
+SherpaOnnxVoiceActivityDetectorFront(const SherpaOnnxVoiceActivityDetector *p);
 
 // Free the pointer returned SherpaOnnxVoiceActivityDetectorFront().
 SHERPA_ONNX_API void SherpaOnnxDestroySpeechSegment(
@@ -887,10 +917,10 @@ SHERPA_ONNX_API void SherpaOnnxDestroySpeechSegment(
 
 // Re-initialize the voice activity detector.
 SHERPA_ONNX_API void SherpaOnnxVoiceActivityDetectorReset(
-    SherpaOnnxVoiceActivityDetector *p);
+    const SherpaOnnxVoiceActivityDetector *p);
 
 SHERPA_ONNX_API void SherpaOnnxVoiceActivityDetectorFlush(
-    SherpaOnnxVoiceActivityDetector *p);
+    const SherpaOnnxVoiceActivityDetector *p);
 
 // ============================================================
 // For offline Text-to-Speech (i.e., non-streaming TTS)
@@ -926,6 +956,8 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsKokoroModelConfig {
   const char *data_dir;
 
   float length_scale;  // < 1, faster in speech speed; > 1, slower in speed
+  const char *dict_dir;
+  const char *lexicon;
 } SherpaOnnxOfflineTtsKokoroModelConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsModelConfig {
@@ -942,6 +974,7 @@ SHERPA_ONNX_API typedef struct SherpaOnnxOfflineTtsConfig {
   const char *rule_fsts;
   int32_t max_num_sentences;
   const char *rule_fars;
+  float silence_scale;
 } SherpaOnnxOfflineTtsConfig;
 
 SHERPA_ONNX_API typedef struct SherpaOnnxGeneratedAudio {
@@ -1029,6 +1062,18 @@ SHERPA_ONNX_API void SherpaOnnxDestroyOfflineTtsGeneratedAudio(
 SHERPA_ONNX_API int32_t SherpaOnnxWriteWave(const float *samples, int32_t n,
                                             int32_t sample_rate,
                                             const char *filename);
+
+// the amount of bytes needed to store a wave file which contains a
+// single channel and has 16-bit samples.
+SHERPA_ONNX_API int64_t SherpaOnnxWaveFileSize(int32_t n_samples);
+
+// Similar to SherpaOnnxWriteWave , it writes wave to allocated  buffer;
+//
+// in some case (http tts api return wave binary file, server do not need to
+// write wave to fs)
+SHERPA_ONNX_API void SherpaOnnxWriteWaveToBuffer(const float *samples,
+                                                 int32_t n, int32_t sample_rate,
+                                                 char *buffer);
 
 SHERPA_ONNX_API typedef struct SherpaOnnxWave {
   // samples normalized to the range [-1, 1]
@@ -1450,15 +1495,16 @@ SHERPA_ONNX_API typedef struct SherpaOnnxLinearResampler
 */
 // The user has to invoke SherpaOnnxDestroyLinearResampler()
 // to free the returned pointer to avoid memory leak
-SHERPA_ONNX_API SherpaOnnxLinearResampler *SherpaOnnxCreateLinearResampler(
-    int32_t samp_rate_in_hz, int32_t samp_rate_out_hz, float filter_cutoff_hz,
-    int32_t num_zeros);
+SHERPA_ONNX_API const SherpaOnnxLinearResampler *
+SherpaOnnxCreateLinearResampler(int32_t samp_rate_in_hz,
+                                int32_t samp_rate_out_hz,
+                                float filter_cutoff_hz, int32_t num_zeros);
 
 SHERPA_ONNX_API void SherpaOnnxDestroyLinearResampler(
-    SherpaOnnxLinearResampler *p);
+    const SherpaOnnxLinearResampler *p);
 
 SHERPA_ONNX_API void SherpaOnnxLinearResamplerReset(
-    SherpaOnnxLinearResampler *p);
+    const SherpaOnnxLinearResampler *p);
 
 typedef struct SherpaOnnxResampleOut {
   const float *samples;
@@ -1470,7 +1516,7 @@ typedef struct SherpaOnnxResampleOut {
 // If this is the last segment, you can set flush to 1; otherwise, please
 // set flush to 0
 SHERPA_ONNX_API const SherpaOnnxResampleOut *SherpaOnnxLinearResamplerResample(
-    SherpaOnnxLinearResampler *p, const float *input, int32_t input_dim,
+    const SherpaOnnxLinearResampler *p, const float *input, int32_t input_dim,
     int32_t flush);
 
 SHERPA_ONNX_API void SherpaOnnxLinearResamplerResampleFree(
@@ -1608,10 +1654,71 @@ SherpaOnnxOfflineSpeakerDiarizationProcessWithCallbackNoArg(
 SHERPA_ONNX_API void SherpaOnnxOfflineSpeakerDiarizationDestroyResult(
     const SherpaOnnxOfflineSpeakerDiarizationResult *r);
 
+// =========================================================================
+// For offline speech enhancement
+// =========================================================================
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig {
+  const char *model;
+} SherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig;
+
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineSpeechDenoiserModelConfig {
+  SherpaOnnxOfflineSpeechDenoiserGtcrnModelConfig gtcrn;
+  int32_t num_threads;
+  int32_t debug;  // true to print debug information of the model
+  const char *provider;
+} SherpaOnnxOfflineSpeechDenoiserModelConfig;
+
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineSpeechDenoiserConfig {
+  SherpaOnnxOfflineSpeechDenoiserModelConfig model;
+} SherpaOnnxOfflineSpeechDenoiserConfig;
+
+SHERPA_ONNX_API typedef struct SherpaOnnxOfflineSpeechDenoiser
+    SherpaOnnxOfflineSpeechDenoiser;
+
+// The users has to invoke SherpaOnnxDestroyOfflineSpeechDenoiser()
+// to free the returned pointer to avoid memory leak
+SHERPA_ONNX_API const SherpaOnnxOfflineSpeechDenoiser *
+SherpaOnnxCreateOfflineSpeechDenoiser(
+    const SherpaOnnxOfflineSpeechDenoiserConfig *config);
+
+// Free the pointer returned by SherpaOnnxCreateOfflineSpeechDenoiser()
+SHERPA_ONNX_API void SherpaOnnxDestroyOfflineSpeechDenoiser(
+    const SherpaOnnxOfflineSpeechDenoiser *sd);
+
+SHERPA_ONNX_API int32_t SherpaOnnxOfflineSpeechDenoiserGetSampleRate(
+    const SherpaOnnxOfflineSpeechDenoiser *sd);
+
+SHERPA_ONNX_API typedef struct SherpaOnnxDenoisedAudio {
+  const float *samples;  // in the range [-1, 1]
+  int32_t n;             // number of samples
+  int32_t sample_rate;
+} SherpaOnnxDenoisedAudio;
+
+// Run speech denosing on input samples
+// @param samples  A 1-D array containing the input audio samples. Each sample
+//           should be in the range [-1, 1].
+// @param n  Number of samples
+// @param sample_rate Sample rate of the input samples
+//
+// The user MUST use SherpaOnnxDestroyDenoisedAudio() to free the returned
+// pointer to avoid memory leak.
+SHERPA_ONNX_API const SherpaOnnxDenoisedAudio *
+SherpaOnnxOfflineSpeechDenoiserRun(const SherpaOnnxOfflineSpeechDenoiser *sd,
+                                   const float *samples, int32_t n,
+                                   int32_t sample_rate);
+
+SHERPA_ONNX_API void SherpaOnnxDestroyDenoisedAudio(
+    const SherpaOnnxDenoisedAudio *p);
+
 #ifdef __OHOS__
 
 // It is for HarmonyOS
 typedef struct NativeResourceManager NativeResourceManager;
+
+SHERPA_ONNX_API const SherpaOnnxOfflineSpeechDenoiser *
+SherpaOnnxCreateOfflineSpeechDenoiserOHOS(
+    const SherpaOnnxOfflineSpeechDenoiserConfig *config,
+    NativeResourceManager *mgr);
 
 /// @param config  Config for the recognizer.
 /// @return Return a pointer to the recognizer. The user has to invoke
@@ -1632,7 +1739,7 @@ SherpaOnnxCreateOfflineRecognizerOHOS(
 // Return an instance of VoiceActivityDetector.
 // The user has to use SherpaOnnxDestroyVoiceActivityDetector() to free
 // the returned pointer to avoid memory leak.
-SHERPA_ONNX_API SherpaOnnxVoiceActivityDetector *
+SHERPA_ONNX_API const SherpaOnnxVoiceActivityDetector *
 SherpaOnnxCreateVoiceActivityDetectorOHOS(
     const SherpaOnnxVadModelConfig *config, float buffer_size_in_seconds,
     NativeResourceManager *mgr);
