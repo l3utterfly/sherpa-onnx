@@ -4,6 +4,7 @@
 
 #include "sherpa-onnx/csrc/offline-tts-kokoro-model-config.h"
 
+#include <string>
 #include <vector>
 
 #include "sherpa-onnx/csrc/file-utils.h"
@@ -18,6 +19,13 @@ void OfflineTtsKokoroModelConfig::Register(ParseOptions *po) {
                "Path to voices.bin for Kokoro models");
   po->Register("kokoro-tokens", &tokens,
                "Path to tokens.txt for Kokoro models");
+  po->Register("kokoro-lang", &lang,
+               "Used only by kokoro >= 1.0. Example values: "
+               "en (English), "
+               "es (Spanish), fr (French), hi (hindi), it (Italian), "
+               "pt-br (Brazilian Portuguese)."
+               "You can leave it empty, in which case you need to provide "
+               "--kokoro-lexicon.");
   po->Register(
       "kokoro-lexicon", &lexicon,
       "Path to lexicon.txt for Kokoro models. Used only for Kokoro >= v1.0"
@@ -26,8 +34,7 @@ void OfflineTtsKokoroModelConfig::Register(ParseOptions *po) {
   po->Register("kokoro-data-dir", &data_dir,
                "Path to the directory containing dict for espeak-ng.");
   po->Register("kokoro-dict-dir", &dict_dir,
-               "Path to the directory containing dict for jieba. "
-               "Used only for Kokoro >= v1.0");
+               "Not used. You don't need to provide a value for it");
   po->Register("kokoro-length-scale", &length_scale,
                "Speech speed. Larger->Slower; Smaller->faster.");
 }
@@ -100,18 +107,9 @@ bool OfflineTtsKokoroModelConfig::Validate() const {
   }
 
   if (!dict_dir.empty()) {
-    std::vector<std::string> required_files = {
-        "jieba.dict.utf8", "hmm_model.utf8",  "user.dict.utf8",
-        "idf.utf8",        "stop_words.utf8",
-    };
-
-    for (const auto &f : required_files) {
-      if (!FileExists(dict_dir + "/" + f)) {
-        SHERPA_ONNX_LOGE("'%s/%s' does not exist. Please check kokoro-dict-dir",
-                         dict_dir.c_str(), f.c_str());
-        return false;
-      }
-    }
+    SHERPA_ONNX_LOGE(
+        "From sherpa-onnx v1.12.15, you don't need to provide dict_dir or "
+        "dictDir for this model. Ignore this value.");
   }
 
   return true;
@@ -126,8 +124,8 @@ std::string OfflineTtsKokoroModelConfig::ToString() const {
   os << "tokens=\"" << tokens << "\", ";
   os << "lexicon=\"" << lexicon << "\", ";
   os << "data_dir=\"" << data_dir << "\", ";
-  os << "dict_dir=\"" << dict_dir << "\", ";
-  os << "length_scale=" << length_scale << ")";
+  os << "length_scale=" << length_scale << ", ";
+  os << "lang=\"" << lang << "\")";
 
   return os.str();
 }

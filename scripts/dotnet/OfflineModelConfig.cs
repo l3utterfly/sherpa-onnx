@@ -27,6 +27,12 @@ namespace SherpaOnnx
             Moonshine = new OfflineMoonshineModelConfig();
             FireRedAsr = new OfflineFireRedAsrModelConfig();
             Dolphin = new OfflineDolphinModelConfig();
+            ZipformerCtc = new OfflineZipformerCtcModelConfig();
+            Canary = new OfflineCanaryModelConfig();
+            WenetCtc = new OfflineWenetCtcModelConfig();
+            Omnilingual = new OfflineOmnilingualAsrCtcModelConfig();
+            MedAsr = new OfflineMedAsrCtcModelConfig();
+            FunAsrNano = new OfflineFunAsrNanoModelConfig();
         }
         public OfflineTransducerModelConfig Transducer;
         public OfflineParaformerModelConfig Paraformer;
@@ -60,5 +66,11 @@ namespace SherpaOnnx
         public OfflineMoonshineModelConfig Moonshine;
         public OfflineFireRedAsrModelConfig FireRedAsr;
         public OfflineDolphinModelConfig Dolphin;
+        public OfflineZipformerCtcModelConfig ZipformerCtc;
+        public OfflineCanaryModelConfig Canary;
+        public OfflineWenetCtcModelConfig WenetCtc;
+        public OfflineOmnilingualAsrCtcModelConfig Omnilingual;
+        public OfflineMedAsrCtcModelConfig MedAsr;
+        public OfflineFunAsrNanoModelConfig FunAsrNano;
     }
 }

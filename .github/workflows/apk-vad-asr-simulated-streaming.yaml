@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - apk
-      - apk-android-simulate-streaming-asr
 
   workflow_dispatch:
 
@@ -31,6 +30,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Update version
+        shell: bash
+        run: |
+          ./new-release.sh
+          git diff .
 
       # https://github.com/actions/setup-java
       - uses: actions/setup-java@v4
@@ -164,7 +169,7 @@ jobs:
             SHERPA_ONNX_VERSION=$(grep "SHERPA_ONNX_VERSION" ./CMakeLists.txt  | cut -d " " -f 2  | cut -d '"' -f 2)
             echo "SHERPA_ONNX_VERSION $SHERPA_ONNX_VERSION"
 
-            git clone https://csukuangfj:$HF_TOKEN@huggingface.co/csukuangfj/sherpa-onnx-apk huggingface
+            git clone https://csukuangfj2:$HF_TOKEN@huggingface.co/csukuangfj2/sherpa-onnx-apk huggingface
             cd huggingface
             du -h -d1 .
             git fetch
@@ -178,4 +183,4 @@ jobs:
             git lfs track "*.apk"
             git add .
             git commit -m "add more apks"
-            git push https://csukuangfj:$HF_TOKEN@huggingface.co/csukuangfj/sherpa-onnx-apk main
+            git push https://csukuangfj2:$HF_TOKEN@huggingface.co/csukuangfj2/sherpa-onnx-apk main

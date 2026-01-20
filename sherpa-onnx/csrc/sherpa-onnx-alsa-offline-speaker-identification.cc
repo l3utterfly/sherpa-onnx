@@ -10,11 +10,14 @@
 #include <fstream>
 #include <mutex>  // NOLINT
 #include <sstream>
+#include <string>
 #include <thread>  // NOLINT
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 #include "sherpa-onnx/csrc/alsa.h"
 #include "sherpa-onnx/csrc/macros.h"
-#include "sherpa-onnx/csrc/microphone.h"
 #include "sherpa-onnx/csrc/speaker-embedding-extractor.h"
 #include "sherpa-onnx/csrc/speaker-embedding-manager.h"
 #include "sherpa-onnx/csrc/wave-reader.h"

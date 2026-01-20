@@ -1,5 +1,8 @@
 // Copyright (c)  2024  Xiaomi Corporation
 const sherpa_onnx = require('sherpa-onnx-node');
+console.log(`version : ${sherpa_onnx.version}`);
+console.log(`git sha1: ${sherpa_onnx.gitSha1}`);
+console.log(`git date: ${sherpa_onnx.gitDate}`);
 
 // Please download test files from
 // https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models
@@ -30,7 +33,7 @@ const wave = sherpa_onnx.readWave(waveFilename);
 stream.acceptWaveform({sampleRate: wave.sampleRate, samples: wave.samples});
 
 recognizer.decode(stream);
-result = recognizer.getResult(stream)
+const result = recognizer.getResult(stream);
 let stop = Date.now();
 console.log('Done')
 

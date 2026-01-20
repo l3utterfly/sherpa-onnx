@@ -41,11 +41,11 @@ struct PairHash {
 };
 }  // namespace
 
-using Matrix2D =
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+using Matrix2D = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>;  // NOLINT
 
-using Matrix2DInt32 =
-    Eigen::Matrix<int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+using Matrix2DInt32 = Eigen::Matrix<int32_t, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>;  // NOLINT
 
 using FloatRowVector = Eigen::Matrix<float, 1, Eigen::Dynamic>;
 using Int32RowVector = Eigen::Matrix<int32_t, 1, Eigen::Dynamic>;
@@ -159,6 +159,11 @@ class OfflineSpeakerDiarizationPyannoteImpl
 
     std::vector<int32_t> cluster_labels = clustering_->Cluster(
         &embeddings(0, 0), embeddings.rows(), embeddings.cols());
+
+    if (cluster_labels.empty()) {
+      SHERPA_ONNX_LOGE("No speakers found in the audio samples");
+      return {};
+    }
 
     int32_t max_cluster_index =
         *std::max_element(cluster_labels.begin(), cluster_labels.end());

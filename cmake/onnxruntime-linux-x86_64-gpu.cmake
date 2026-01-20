@@ -19,19 +19,20 @@ if(NOT SHERPA_ONNX_ENABLE_GPU)
 endif()
 
 
-set(onnxruntime_URL  "https://github.com/csukuangfj/onnxruntime-libs/releases/download/v1.17.1/onnxruntime-linux-x64-gpu-1.17.1-patched.zip")
-set(onnxruntime_URL2 "https://hf-mirror.com/csukuangfj/onnxruntime-libs/resolve/main/onnxruntime-linux-x64-gpu-1.17.1-patched.zip")
-set(onnxruntime_HASH "SHA256=1261de176e8d9d4d2019f8fa8c732c6d11494f3c6e73168ab6d2cc0903f22551")
+# Requres CUDA 12, cudnn 9
+set(onnxruntime_URL  "https://github.com/csukuangfj/onnxruntime-libs/releases/download/v1.23.2/onnxruntime-linux-x64-gpu-1.23.2-patched.zip")
+set(onnxruntime_URL2 "https://hf-mirror.com/csukuangfj/onnxruntime-libs/resolve/main/1.23.2/onnxruntime-linux-x64-gpu-1.23.2-patched.zip")
+set(onnxruntime_HASH "SHA256=e2f622513212304447e34512b99ae4eabb4fd8870dd1baac895f222179dede19")
 
 # If you don't have access to the Internet,
 # please download onnxruntime to one of the following locations.
 # You can add more if you want.
 set(possible_file_locations
-  $ENV{HOME}/Downloads/onnxruntime-linux-x64-gpu-1.17.1-patched.zip
-  ${CMAKE_SOURCE_DIR}/onnxruntime-linux-x64-gpu-1.17.1-patched.zip
-  ${CMAKE_BINARY_DIR}/onnxruntime-linux-x64-gpu-1.17.1-patched.zip
-  /tmp/onnxruntime-linux-x64-gpu-1.17.1-patched.zip
-  /star-fj/fangjun/download/github/onnxruntime-linux-x64-gpu-1.17.1-patched.zip
+  $ENV{HOME}/Downloads/onnxruntime-linux-x64-gpu-1.23.2-patched.zip
+  ${CMAKE_SOURCE_DIR}/onnxruntime-linux-x64-gpu-1.23.2-patched.zip
+  ${CMAKE_BINARY_DIR}/onnxruntime-linux-x64-gpu-1.23.2-patched.zip
+  /tmp/onnxruntime-linux-x64-gpu-1.23.2-patched.zip
+  /star-fj/fangjun/download/github/onnxruntime-linux-x64-gpu-1.23.2-patched.zip
 )
 
 foreach(f IN LISTS possible_file_locations)
@@ -72,30 +73,6 @@ set_target_properties(onnxruntime PROPERTIES
   IMPORTED_LOCATION ${location_onnxruntime}
   INTERFACE_INCLUDE_DIRECTORIES "${onnxruntime_SOURCE_DIR}/include"
 )
-
-find_library(location_onnxruntime_cuda_lib onnxruntime_providers_cuda
-  PATHS
-  "${onnxruntime_SOURCE_DIR}/lib"
-  NO_CMAKE_SYSTEM_PATH
-)
-
-add_library(onnxruntime_providers_cuda SHARED IMPORTED)
-set_target_properties(onnxruntime_providers_cuda PROPERTIES
-  IMPORTED_LOCATION ${location_onnxruntime_cuda_lib}
-)
-message(STATUS "location_onnxruntime_cuda_lib: ${location_onnxruntime_cuda_lib}")
-
-# for libonnxruntime_providers_shared.so
-find_library(location_onnxruntime_providers_shared_lib onnxruntime_providers_shared
-  PATHS
-  "${onnxruntime_SOURCE_DIR}/lib"
-  NO_CMAKE_SYSTEM_PATH
-)
-add_library(onnxruntime_providers_shared SHARED IMPORTED)
-set_target_properties(onnxruntime_providers_shared PROPERTIES
-  IMPORTED_LOCATION ${location_onnxruntime_providers_shared_lib}
-)
-message(STATUS "location_onnxruntime_providers_shared_lib: ${location_onnxruntime_providers_shared_lib}")
 
 file(GLOB onnxruntime_lib_files "${onnxruntime_SOURCE_DIR}/lib/libonnxruntime*")
 message(STATUS "onnxruntime lib files: ${onnxruntime_lib_files}")

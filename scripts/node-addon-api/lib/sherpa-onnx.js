@@ -1,3 +1,7 @@
+/** @typedef {import('./types').WaveObject} WaveObject */
+/** @typedef {import('./types').OnlineRecognizerResult} OnlineRecognizerResult */
+/** @typedef {import('./types').OfflineRecognizerResult} OfflineRecognizerResult */
+
 const addon = require('./addon.js')
 const streaming_asr = require('./streaming-asr.js');
 const non_streaming_asr = require('./non-streaming-asr.js');
@@ -24,8 +28,12 @@ module.exports = {
   SpeakerEmbeddingExtractor: sid.SpeakerEmbeddingExtractor,
   SpeakerEmbeddingManager: sid.SpeakerEmbeddingManager,
   AudioTagging: at.AudioTagging,
-  Punctuation: punct.Punctuation,
+  OfflinePunctuation: punct.OfflinePunctuation,
+  OnlinePunctuation: punct.OnlinePunctuation,
   KeywordSpotter: kws.KeywordSpotter,
   OfflineSpeakerDiarization: sd.OfflineSpeakerDiarization,
   OfflineSpeechDenoiser: speech_denoiser.OfflineSpeechDenoiser,
+  version: addon.version,
+  gitSha1: addon.gitSha1,
+  gitDate: addon.gitDate,
 }

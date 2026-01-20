@@ -3,9 +3,13 @@
 from pathlib import Path
 from typing import List, Optional
 
-from _sherpa_onnx import (
+from sherpa_onnx.lib._sherpa_onnx import (
     FeatureExtractorConfig,
     HomophoneReplacerConfig,
+    OfflineCanaryModelConfig,
+    OfflineFunASRNanoModelConfig,
+    OfflineOmnilingualAsrCtcModelConfig,
+    OfflineMedAsrCtcModelConfig,
     OfflineCtcFstDecoderConfig,
     OfflineDolphinModelConfig,
     OfflineFireRedAsrModelConfig,
@@ -15,8 +19,8 @@ from _sherpa_onnx import (
     OfflineNemoEncDecCtcModelConfig,
     OfflineParaformerModelConfig,
 )
-from _sherpa_onnx import OfflineRecognizer as _Recognizer
-from _sherpa_onnx import (
+from sherpa_onnx.lib._sherpa_onnx import OfflineRecognizer as _Recognizer
+from sherpa_onnx.lib._sherpa_onnx import (
     OfflineRecognizerConfig,
     OfflineSenseVoiceModelConfig,
     OfflineStream,
@@ -68,6 +72,8 @@ class OfflineRecognizer(object):
         hr_dict_dir: str = "",
         hr_rule_fsts: str = "",
         hr_lexicon: str = "",
+        lodr_fst: str = "",
+        lodr_scale: float = 0.0,
     ):
         """
         Please refer to
@@ -132,6 +138,10 @@ class OfflineRecognizer(object):
           rule_fars:
             If not empty, it specifies fst archives for inverse text normalization.
             If there are multiple archives, they are separated by a comma.
+          lodr_fst:
+            Path to the LODR FST file in binary format. If empty, LODR is disabled.
+          lodr_scale:
+            Scale factor for LODR rescoring. Only used when lodr_fst is provided.
         """
         self = cls.__new__(cls)
         model_config = OfflineModelConfig(
@@ -172,6 +182,8 @@ class OfflineRecognizer(object):
             scale=lm_scale,
             lm_num_threads=num_threads,
             lm_provider=provider,
+            lodr_fst=lodr_fst,
+            lodr_scale=lodr_scale,
         )
 
         recognizer_config = OfflineRecognizerConfig(
@@ -280,6 +292,98 @@ class OfflineRecognizer(object):
                 lexicon=hr_lexicon,
                 rule_fsts=hr_rule_fsts,
             ),
+        )
+        self.recognizer = _Recognizer(recognizer_config)
+        self.config = recognizer_config
+        return self
+
+    @classmethod
+    def from_funasr_nano(
+        cls,
+        encoder_adaptor: str,
+        llm: str,
+        embedding: str,
+        tokenizer: str,
+        num_threads: int = 1,
+        sample_rate: int = 16000,
+        feature_dim: int = 80,
+        decoding_method: str = "greedy_search",
+        debug: bool = False,
+        provider: str = "cpu",
+        system_prompt: str = "You are a helpful assistant.",
+        user_prompt: str = "语音转写:",
+        max_new_tokens: int = 512,
+        temperature: float = 1e-6,
+        top_p: float = 0.8,
+        seed: int = 42,
+    ):
+        """
+        Create an offline recognizer for FunASR-nano models.
+
+        Args:
+          encoder_adaptor:
+            Path to ``encoder_adaptor.onnx``.
+          llm:
+            Path to ``llm.onnx`` (KV cache model).
+          embedding:
+            Path to ``embedding.onnx``.
+          tokenizer:
+            Path to tokenizer directory (e.g., Qwen3-0.6B).
+          num_threads:
+            Number of threads for neural network computation.
+          sample_rate:
+            Sample rate of the training data used to train the model.
+          feature_dim:
+            Dimension of the feature used to train the model.
+          decoding_method:
+            Valid values are greedy_search.
+          debug:
+            True to show debug messages.
+          provider:
+            onnxruntime execution providers. Valid values are: cpu, cuda.
+          system_prompt:
+            System prompt for FunASR-nano.
+          user_prompt:
+            User prompt template for FunASR-nano.
+          max_new_tokens:
+            Maximum number of new tokens to generate.
+          temperature:
+            Sampling temperature.
+          top_p:
+            Top-p (nucleus) sampling threshold.
+          seed:
+            Random seed.
+        """
+        self = cls.__new__(cls)
+        # Create OfflineFunASRNanoModelConfig and set attributes
+        funasr_nano_config = OfflineFunASRNanoModelConfig()
+        funasr_nano_config.encoder_adaptor = encoder_adaptor
+        funasr_nano_config.llm = llm
+        funasr_nano_config.embedding = embedding
+        funasr_nano_config.tokenizer = tokenizer
+        funasr_nano_config.system_prompt = system_prompt
+        funasr_nano_config.user_prompt = user_prompt
+        funasr_nano_config.max_new_tokens = max_new_tokens
+        funasr_nano_config.temperature = temperature
+        funasr_nano_config.top_p = top_p
+        funasr_nano_config.seed = seed
+
+        model_config = OfflineModelConfig(
+            funasr_nano=funasr_nano_config,
+            num_threads=num_threads,
+            debug=debug,
+            provider=provider,
+        )
+
+        feat_config = FeatureExtractorConfig(
+            sampling_rate=sample_rate,
+            feature_dim=feature_dim,
+        )
+
+        recognizer_config = OfflineRecognizerConfig(
+            feat_config=feat_config,
+            model_config=model_config,
+            decoding_method=decoding_method,
         )
         self.recognizer = _Recognizer(recognizer_config)
         self.config = recognizer_config
@@ -425,7 +529,6 @@ class OfflineRecognizer(object):
             num_threads=num_threads,
             debug=debug,
             provider=provider,
-            model_type="nemo_ctc",
         )
 
         feat_config = FeatureExtractorConfig(
@@ -528,6 +631,187 @@ class OfflineRecognizer(object):
         return self
 
     @classmethod
+    def from_medasr_ctc(
+        cls,
+        model: str,
+        tokens: str,
+        num_threads: int = 1,
+        decoding_method: str = "greedy_search",
+        debug: bool = False,
+        provider: str = "cpu",
+    ):
+        """
+        Please refer to
+        `<https://k2-fsa.github.io/sherpa/onnx/medasr/index.html>`_
+        to download pre-trained models.
+
+        Args:
+          model:
+            Path to ``model.onnx``.
+          tokens:
+            Path to ``tokens.txt``. Each line in ``tokens.txt`` contains two
+            columns::
+
+                symbol integer_id
+
+          num_threads:
+            Number of threads for neural network computation.
+          decoding_method:
+            The only supported decoding method is greedy_search.
+          debug:
+            True to show debug messages.
+          provider:
+            onnxruntime execution providers. Valid values are: cpu, cuda, coreml.
+        """
+        self = cls.__new__(cls)
+        model_config = OfflineModelConfig(
+            medasr=OfflineMedAsrCtcModelConfig(model=model),
+            tokens=tokens,
+            num_threads=num_threads,
+            debug=debug,
+            provider=provider,
+        )
+
+        recognizer_config = OfflineRecognizerConfig(
+            model_config=model_config,
+            decoding_method=decoding_method,
+        )
+        self.recognizer = _Recognizer(recognizer_config)
+        self.config = recognizer_config
+        return self
+
+    @classmethod
+    def from_omnilingual_asr_ctc(
+        cls,
+        model: str,
+        tokens: str,
+        num_threads: int = 1,
+        decoding_method: str = "greedy_search",
+        debug: bool = False,
+        provider: str = "cpu",
+    ):
+        """
+        Please refer to
+        `<https://k2-fsa.github.io/sherpa/onnx/omnilingual-asr/index.html>`_
+        to download pre-trained models.
+
+        Args:
+          model:
+            Path to ``model.onnx``.
+          tokens:
+            Path to ``tokens.txt``. Each line in ``tokens.txt`` contains two
+            columns::
+
+                symbol integer_id
+
+          num_threads:
+            Number of threads for neural network computation.
+          decoding_method:
+            The only supported decoding method is greedy_search.
+          debug:
+            True to show debug messages.
+          provider:
+            onnxruntime execution providers. Valid values are: cpu, cuda, coreml.
+        """
+        self = cls.__new__(cls)
+        model_config = OfflineModelConfig(
+            omnilingual=OfflineOmnilingualAsrCtcModelConfig(model=model),
+            tokens=tokens,
+            num_threads=num_threads,
+            debug=debug,
+            provider=provider,
+        )
+
+        recognizer_config = OfflineRecognizerConfig(
+            model_config=model_config,
+            decoding_method=decoding_method,
+        )
+        self.recognizer = _Recognizer(recognizer_config)
+        self.config = recognizer_config
+        return self
+
+    @classmethod
+    def from_zipformer_ctc(
+        cls,
+        model: str,
+        tokens: str,
+        num_threads: int = 1,
+        sample_rate: int = 16000,
+        feature_dim: int = 80,
+        decoding_method: str = "greedy_search",
+        debug: bool = False,
+        provider: str = "cpu",
+        rule_fsts: str = "",
+        rule_fars: str = "",
+        hr_dict_dir: str = "",
+        hr_rule_fsts: str = "",
+        hr_lexicon: str = "",
+    ):
+        """
+        Please refer to
+        `<https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-ctc/icefall/index.html>`_
+        to download pre-trained models for different languages, e.g., Chinese,
+        English, etc.
+
+        Args:
+          model:
+            Path to ``model.onnx``.
+          tokens:
+            Path to ``tokens.txt``. Each line in ``tokens.txt`` contains two
+            columns::
+
+                symbol integer_id
+
+          num_threads:
+            Number of threads for neural network computation.
+          sample_rate:
+            Sample rate of the training data used to train the model.
+          feature_dim:
+            Dimension of the feature used to train the model.
+          decoding_method:
+            Valid values are greedy_search.
+          debug:
+            True to show debug messages.
+          provider:
+            onnxruntime execution providers. Valid values are: cpu, cuda, coreml.
+          rule_fsts:
+            If not empty, it specifies fsts for inverse text normalization.
+            If there are multiple fsts, they are separated by a comma.
+          rule_fars:
+            If not empty, it specifies fst archives for inverse text normalization.
+            If there are multiple archives, they are separated by a comma.
+        """
+        self = cls.__new__(cls)
+        model_config = OfflineModelConfig(
+            zipformer_ctc=OfflineZipformerCtcModelConfig(model=model),
+            tokens=tokens,
+            num_threads=num_threads,
+            debug=debug,
+            provider=provider,
+        )
+
+        feat_config = FeatureExtractorConfig(
+            sampling_rate=sample_rate,
+            feature_dim=feature_dim,
+        )
+
+        recognizer_config = OfflineRecognizerConfig(
+            feat_config=feat_config,
+            model_config=model_config,
+            decoding_method=decoding_method,
+            rule_fsts=rule_fsts,
+            rule_fars=rule_fars,
+            hr=HomophoneReplacerConfig(
+                dict_dir=hr_dict_dir,
+                lexicon=hr_lexicon,
+                rule_fsts=hr_rule_fsts,
+            ),
+        )
+        self.recognizer = _Recognizer(recognizer_config)
+        self.config = recognizer_config
+        return self
+
+    @classmethod
     def from_nemo_ctc(
         cls,
         model: str,
@@ -586,6 +870,102 @@ class OfflineRecognizer(object):
             debug=debug,
             provider=provider,
             model_type="nemo_ctc",
+        )
+
+        feat_config = FeatureExtractorConfig(
+            sampling_rate=sample_rate,
+            feature_dim=feature_dim,
+        )
+
+        recognizer_config = OfflineRecognizerConfig(
+            feat_config=feat_config,
+            model_config=model_config,
+            decoding_method=decoding_method,
+            rule_fsts=rule_fsts,
+            rule_fars=rule_fars,
+            hr=HomophoneReplacerConfig(
+                dict_dir=hr_dict_dir,
+                lexicon=hr_lexicon,
+                rule_fsts=hr_rule_fsts,
+            ),
+        )
+        self.recognizer = _Recognizer(recognizer_config)
+        self.config = recognizer_config
+        return self
+
+    @classmethod
+    def from_nemo_canary(
+        cls,
+        encoder: str,
+        decoder: str,
+        tokens: str,
+        src_lang: str = "en",
+        tgt_lang: str = "en",
+        num_threads: int = 1,
+        sample_rate: int = 16000,
+        feature_dim: int = 128,  # not used
+        decoding_method: str = "greedy_search",  # not used
+        debug: bool = False,
+        provider: str = "cpu",
+        rule_fsts: str = "",
+        rule_fars: str = "",
+        hr_dict_dir: str = "",
+        hr_rule_fsts: str = "",
+        hr_lexicon: str = "",
+    ):
+        """
+        Please refer to
+        `<https://k2-fsa.github.io/sherpa/onnx/nemo/index.html>`_
+        to download pre-trained models for different languages.
+
+        Args:
+          encoder:
+            Path to ``encoder.onnx`` or ``encoder.int8.onnx``.
+          decoder:
+            Path to ``decoder.onnx`` or ``decoder.int8.onnx``.
+          tokens:
+            Path to ``tokens.txt``. Each line in ``tokens.txt`` contains two
+            columns::
+
+                symbol integer_id
+
+          src_lang:
+            The language of the input audio. Valid values are: en, es, de, fr.
+            If you leave it empty, it uses en internally.
+          tgt_lang:
+            The language of the output text. Valid values are: en, es, de, fr.
+            If you leave it empty, it uses en internally.
+          num_threads:
+            Number of threads for neural network computation.
+          sample_rate:
+            Sample rate of the training data used to train the model. Not used
+          feature_dim:
+            Dimension of the feature used to train the model. Not used
+          decoding_method:
+            Valid values are greedy_search. Not used
+          debug:
+            True to show debug messages.
+          provider:
+            onnxruntime execution providers. Valid values are: cpu, cuda, coreml.
+          rule_fsts:
+            If not empty, it specifies fsts for inverse text normalization.
+            If there are multiple fsts, they are separated by a comma.
+          rule_fars:
+            If not empty, it specifies fst archives for inverse text normalization.
+            If there are multiple archives, they are separated by a comma.
+        """
+        self = cls.__new__(cls)
+        model_config = OfflineModelConfig(
+            canary=OfflineCanaryModelConfig(
+                encoder=encoder,
+                decoder=decoder,
+                src_lang=src_lang,
+                tgt_lang=tgt_lang,
+            ),
+            tokens=tokens,
+            num_threads=num_threads,
+            debug=debug,
+            provider=provider,
         )
 
         feat_config = FeatureExtractorConfig(

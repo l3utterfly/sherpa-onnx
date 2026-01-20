@@ -220,8 +220,9 @@ class OfflineTtsKokoroImpl : public OfflineTtsImpl {
       }
     }
 
-    std::vector<TokenIDs> token_ids =
-        frontend_->ConvertTextToTokenIds(text, meta_data.voice);
+    std::vector<TokenIDs> token_ids = frontend_->ConvertTextToTokenIds(
+        text, config_.model.kokoro.lang.empty() ? meta_data.voice
+                                                : config_.model.kokoro.lang);
 
     if (token_ids.empty() ||
         (token_ids.size() == 1 && token_ids[0].tokens.empty())) {
@@ -334,20 +335,18 @@ class OfflineTtsKokoroImpl : public OfflineTtsImpl {
 
     if (meta_data.version >= 2) {
       // this is a multi-lingual model, we require that you pass lexicon
-      // and dict_dir
-      if (config_.model.kokoro.lexicon.empty() ||
-          config_.model.kokoro.dict_dir.empty()) {
+      if (config_.model.kokoro.lexicon.empty() &&
+          config_.model.kokoro.lang.empty()) {
         SHERPA_ONNX_LOGE("Current model version: '%d'", meta_data.version);
         SHERPA_ONNX_LOGE(
             "You are using a multi-lingual Kokoro model (e.g., Kokoro >= "
-            "v1.0). please pass --kokoro-lexicon and --kokoro-dict-dir");
+            "v1.0). Please pass --kokoro-lexicon or provide --kokoro-lang");
         SHERPA_ONNX_EXIT(-1);
       }
 
       frontend_ = std::make_unique<KokoroMultiLangLexicon>(
           mgr, config_.model.kokoro.tokens, config_.model.kokoro.lexicon,
-          config_.model.kokoro.dict_dir, config_.model.kokoro.data_dir,
-          meta_data, config_.model.debug);
+          config_.model.kokoro.data_dir, meta_data, config_.model.debug);
 
       return;
     }
@@ -361,20 +360,18 @@ class OfflineTtsKokoroImpl : public OfflineTtsImpl {
     const auto &meta_data = model_->GetMetaData();
     if (meta_data.version >= 2) {
       // this is a multi-lingual model, we require that you pass lexicon
-      // and dict_dir
-      if (config_.model.kokoro.lexicon.empty() ||
-          config_.model.kokoro.dict_dir.empty()) {
+      if (config_.model.kokoro.lexicon.empty() &&
+          config_.model.kokoro.lang.empty()) {
         SHERPA_ONNX_LOGE("Current model version: '%d'", meta_data.version);
         SHERPA_ONNX_LOGE(
             "You are using a multi-lingual Kokoro model (e.g., Kokoro >= "
-            "v1.0). please pass --kokoro-lexicon and --kokoro-dict-dir");
+            "v1.0). please pass --kokoro-lexicon or --kokoro-lang");
         SHERPA_ONNX_EXIT(-1);
       }
 
       frontend_ = std::make_unique<KokoroMultiLangLexicon>(
           config_.model.kokoro.tokens, config_.model.kokoro.lexicon,
-          config_.model.kokoro.dict_dir, config_.model.kokoro.data_dir,
-          meta_data, config_.model.debug);
+          config_.model.kokoro.data_dir, meta_data, config_.model.debug);
 
       return;
     }

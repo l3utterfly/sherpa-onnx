@@ -1,8 +1,10 @@
-// sherpa-onnx/csrc/offline-source-separation-spleeter_model-config.cc
+// sherpa-onnx/csrc/offline-source-separation-spleeter-model-config.cc
 //
 // Copyright (c)  2025  Xiaomi Corporation
 
 #include "sherpa-onnx/csrc/offline-source-separation-spleeter-model-config.h"
+
+#include <string>
 
 #include "sherpa-onnx/csrc/file-utils.h"
 #include "sherpa-onnx/csrc/macros.h"

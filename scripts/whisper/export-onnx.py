@@ -32,9 +32,6 @@ from whisper.model import (
     TextDecoder,
 )
 
-torch.set_num_threads(1)
-torch.set_num_interop_threads(1)
-
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -49,7 +46,8 @@ def get_args():
             "large-v1", "large-v2",
             "large", "large-v3", "turbo", # these three have feature dim 128
             "distil-medium.en", "distil-small.en", "distil-large-v2",
-            # "distil-large-v3", # distil-large-v3 is not supported!
+            "distil-large-v3",
+            "distil-large-v3.5",
             # for fine-tuned models from icefall
             "medium-aishell",
             ],
@@ -320,7 +318,7 @@ def main():
     print(args)
     print(name)
 
-    opset_version = 13
+    opset_version = 17
 
     if name == "distil-medium.en":
         filename = "./distil-medium-en-original-model.bin"
@@ -345,6 +343,32 @@ def main():
                 You can use the following command to do that:
 
                 wget -O distil-large-v2-original-model.bin https://huggingface.co/distil-whisper/distil-large-v2/resolve/main/original-model.bin
+            """
+            )
+        model = whisper.load_model(filename)
+    elif name == "distil-large-v3":
+        filename = "./distil-large-v3-original-model.bin"
+        if not Path(filename).is_file():
+            raise ValueError(
+                """
+                Please go to https://huggingface.co/distil-whisper/distil-large-v3-openai
+                to download model.bin
+                You can use the following command to do that:
+
+                wget -O distil-large-v3-original-model.bin https://huggingface.co/distil-whisper/distil-large-v3-openai/resolve/main/model.bin
+            """
+            )
+        model = whisper.load_model(filename)
+    elif name == "distil-large-v3.5":
+        filename = "./distil-large-v3.5-original-model.bin"
+        if not Path(filename).is_file():
+            raise ValueError(
+                """
+                Please go to https://huggingface.co/distil-whisper/distil-large-v3.5-openai/
+                to download model.bin
+                You can use the following command to do that:
+
+                wget -O distil-large-v3.5-original-model.bin https://huggingface.co/distil-whisper/distil-large-v3.5-openai/resolve/main/model.bin
             """
             )
         model = whisper.load_model(filename)
@@ -405,10 +429,17 @@ def main():
     audio = whisper.pad_or_trim(audio)
     assert audio.shape == (16000 * 30,), audio.shape
 
-    if args.model in ("large", "large-v3", "turbo"):
+    if args.model in ("distil-large-v3", "distil-large-v3.5"):
+        n_mels = 128
+    elif args.model in (
+        "large",
+        "large-v3",
+        "turbo",
+    ):
         n_mels = 128
     else:
         n_mels = 80
+
     mel = (
         whisper.log_mel_spectrogram(audio, n_mels=n_mels).to(model.device).unsqueeze(0)
     )
@@ -606,4 +637,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    torch.set_num_threads(1)
+    torch.set_num_interop_threads(1)
+    # To fix
+    # TypeError: scaled_dot_product_attention(): argument 'is_causal' must be bool, not Tensor
+    # See also https://github.com/k2-fsa/sherpa-onnx/issues/1764
+    from whisper.model import disable_sdpa
+
+    with disable_sdpa():
+        main()

@@ -4,8 +4,11 @@
 
 #include <stdio.h>
 
-#include <chrono>  // NOLINT
+#include <algorithm>
+#include <chrono>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "sherpa-onnx/csrc/offline-recognizer.h"
@@ -114,6 +117,23 @@ See https://k2-fsa.github.io/sherpa/onnx/pretrained_models/offline-ctc/yesno/ind
     --tdnn-model=./sherpa-onnx-tdnn-yesno/model-epoch-14-avg-2.onnx \
     ./sherpa-onnx-tdnn-yesno/test_wavs/0_0_0_1_0_0_0_1.wav
 
+(7) FunASR-nano models
+
+See https://github.com/FunAudioLLM/Fun-ASR-Nano-2512
+
+  ./bin/sherpa-onnx-vad-with-offline-asr \
+    --silero-vad-model=/path/to/silero_vad.onnx \
+    --funasr-nano-encoder-adaptor=/path/to/encoder_adaptor.onnx \
+    --funasr-nano-llm=/path/to/llm.onnx \
+    --funasr-nano-tokenizer=/path/to/Qwen3-0.6B \
+    --funasr-nano-embedding=/path/to/embedding.onnx \
+    [--funasr-nano-user-prompt="Transcription:"] \
+    [--funasr-nano-max-new-tokens=512] \
+    [--funasr-nano-temperature=1e-6] \
+    [--funasr-nano-top-p=0.8] \
+    --num-threads=4 \
+    /path/to/foo.wav
+
 The input wav should be of single channel, 16-bit PCM encoded wave file; its
 sampling rate can be arbitrary and does not need to be 16kHz.
 
@@ -186,12 +206,14 @@ for a list of pre-trained models to download.
   fprintf(stderr, "Started!\n");
   int32_t window_size = vad_config.silero_vad.window_size;
   int32_t i = 0;
-  while (i + window_size < samples.size()) {
-    vad->AcceptWaveform(samples.data() + i, window_size);
-    i += window_size;
-    if (i >= samples.size()) {
+  while (i < samples.size()) {
+    if (i + window_size <= samples.size()) {
+      vad->AcceptWaveform(samples.data() + i, window_size);
+    } else {
       vad->Flush();
     }
+
+    i += window_size;
 
     while (!vad->Empty()) {
       const auto &segment = vad->Front();

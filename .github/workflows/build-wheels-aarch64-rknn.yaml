@@ -25,6 +25,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Update version
+        shell: bash
+        run: |
+          ./new-release.sh
+          git diff .
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
       - name: Download rknn-toolkit2
         shell: bash
         run: |
@@ -98,6 +109,7 @@ jobs:
               strings $PWD/alsa-lib/src/.libs/libasound.so.2.0.0 | grep "^GLIBC"
 
               export CPLUS_INCLUDE_PATH=$PWD/alsa-lib/include:$CPLUS_INCLUDE_PATH
+              export C_INCLUDE_PATH=$PWD/alsa-lib/include:$C_INCLUDE_PATH
               export SHERPA_ONNX_ALSA_LIB_DIR=$PWD/alsa-lib/src/.libs
 
               export SHERPA_ONNX_RKNN_TOOLKIT2_PATH=$PWD/rknn-toolkit2
@@ -106,13 +118,33 @@ jobs:
 
               export SHERPA_ONNX_ENABLE_ALSA=1
 
-              export SHERPA_ONNX_CMAKE_ARGS="-DSHERPA_ONNX_ENABLE_RKNN=ON"
+              p=$PWD
+
+              export SHERPA_ONNX_CMAKE_ARGS="-DSHERPA_ONNX_ENABLE_RKNN=ON -DALSA_INCLUDE_DIR=$p/alsa-lib/include -DALSA_LIBRARY=$p/alsa-lib/src/.libs/libasound.so"
               python3 setup.py bdist_wheel
+
+              mv dist wheelhouse
 
       - name: Display results
         shell: bash
         run: |
-          ls -lh dist
+          ls -lh wheelhouse
+
+      - name: Fix wheel name
+        shell: bash
+        run: |
+          python3 -m pip install auditwheel
+
+          auditwheel show ./wheelhouse/*.whl
+
+          auditwheel repair --help
+
+          auditwheel --verbose repair --plat manylinux_2_27_aarch64 \
+            --exclude librknnrt.so \
+            --exclude libasound.so.2 \
+            -w ./dist ./wheelhouse/*.whl
+
+          ls -lh dist/*.whl
 
       - name: Show glibc versions
         shell: bash
@@ -144,7 +176,7 @@ jobs:
 
             d=rknn/$SHERPA_ONNX_VERSION/
 
-            git clone https://csukuangfj:$HF_TOKEN@huggingface.co/csukuangfj/sherpa-onnx-wheels huggingface
+            git clone https://csukuangfj2:$HF_TOKEN@huggingface.co/csukuangfj2/sherpa-onnx-wheels huggingface
             cd huggingface
             git fetch
             git pull
@@ -157,7 +189,7 @@ jobs:
             git status
             git add .
             git commit -m "add more wheels"
-            git push https://csukuangfj:$HF_TOKEN@huggingface.co/csukuangfj/sherpa-onnx-wheels main
+            git push https://csukuangfj2:$HF_TOKEN@huggingface.co/csukuangfj2/sherpa-onnx-wheels main
 
       - uses: actions/upload-artifact@v4
         with:

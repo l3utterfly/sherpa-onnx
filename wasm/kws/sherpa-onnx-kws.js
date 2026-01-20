@@ -56,8 +56,10 @@ function initSherpaOnnxOnlineTransducerModelConfig(config, Module) {
   Module.setValue(ptr + 8, buffer + offset, 'i8*');
 
   return {
-    buffer: buffer, ptr: ptr, len: len,
-  }
+    buffer: buffer,
+    ptr: ptr,
+    len: len,
+  };
 }
 
 // The user should free the returned pointers
@@ -73,9 +75,13 @@ function initModelConfig(config, Module) {
   const transducer =
       initSherpaOnnxOnlineTransducerModelConfig(config.transducer, Module);
   const paraformer_len = 2 * 4
-  const ctc_len = 1 * 4
+  const zipfomer2_ctc_len = 1 * 4
+  const nemo_ctc_len = 1 * 4
+  const t_one_ctc_len = 1 * 4
 
-  const len = transducer.len + paraformer_len + ctc_len + 9 * 4;
+  const len = transducer.len + paraformer_len + zipfomer2_ctc_len + 9 * 4 +
+      nemo_ctc_len + t_one_ctc_len;
+
   const ptr = Module._malloc(len);
   Module.HEAPU8.fill(0, ptr, ptr + len);
 
@@ -112,7 +118,7 @@ function initModelConfig(config, Module) {
   Module.stringToUTF8(config.tokensBuf || '', buffer + offset, tokensBufLen);
   offset += tokensBufLen;
 
-  offset = transducer.len + paraformer_len + ctc_len;
+  offset = transducer.len + paraformer_len + zipfomer2_ctc_len;
   Module.setValue(ptr + offset, buffer, 'i8*');  // tokens
   offset += 4;
 
@@ -149,10 +155,9 @@ function initModelConfig(config, Module) {
 
   Module.setValue(ptr + offset, config.tokensBufSize || 0, 'i32');
   offset += 4;
+  // skip nemo_ctc and t_one_ctc
 
-  return {
-    buffer: buffer, ptr: ptr, len: len, transducer: transducer
-  }
+  return {buffer: buffer, ptr: ptr, len: len, transducer: transducer};
 }
 
 function initFeatureExtractorConfig(config, Module) {
@@ -160,8 +165,9 @@ function initFeatureExtractorConfig(config, Module) {
   Module.setValue(ptr, config.samplingRate || 16000, 'i32');
   Module.setValue(ptr + 4, config.featureDim || 80, 'i32');
   return {
-    ptr: ptr, len: 8,
-  }
+    ptr: ptr,
+    len: 8,
+  };
 }
 
 function initKwsConfig(config, Module) {
@@ -223,9 +229,12 @@ function initKwsConfig(config, Module) {
   offset += 4;
 
   return {
-    ptr: ptr, len: numBytes, featConfig: featConfig, modelConfig: modelConfig,
-        keywordsBuffer: keywordsBuffer
-  }
+    ptr: ptr,
+    len: numBytes,
+    featConfig: featConfig,
+    modelConfig: modelConfig,
+    keywordsBuffer: keywordsBuffer
+  };
 }
 
 class Stream {

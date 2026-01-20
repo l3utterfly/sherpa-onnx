@@ -28,10 +28,11 @@ function linux() {
   dst=$(realpath sherpa-onnx-go-linux/lib/x86_64-unknown-linux-gnu)
   mkdir t
   cd t
-  wget -q https://huggingface.co/csukuangfj/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-  unzip ./sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  wget -q https://huggingface.co/csukuangfj2/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-manylinux2014_x86_64.whl
+  unzip sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-manylinux2014_x86_64.whl
 
-  cp -v sherpa_onnx/lib/*.so* $dst
+  rm -fv $dst/_sherpa*.so
+  cp -v sherpa_onnx/lib/lib*.so* $dst
 
   cd ..
   rm -rf t
@@ -40,10 +41,11 @@ function linux() {
   dst=$(realpath sherpa-onnx-go-linux/lib/aarch64-unknown-linux-gnu)
   mkdir t
   cd t
-  wget -q https://huggingface.co/csukuangfj/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
-  unzip ./sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+  wget -q https://huggingface.co/csukuangfj2/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-manylinux2014_aarch64.whl
+  unzip ./sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-manylinux2014_aarch64.whl
 
-  cp -v sherpa_onnx/lib/*.so* $dst
+  rm -fv $dst/_sherpa*.so
+  cp -v sherpa_onnx/lib/lib*.so* $dst
 
   cd ..
   rm -rf t
@@ -52,10 +54,11 @@ function linux() {
   dst=$(realpath sherpa-onnx-go-linux/lib/arm-unknown-linux-gnueabihf)
   mkdir t
   cd t
-  wget -q https://huggingface.co/csukuangfj/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-linux_armv7l.whl
-  unzip ./sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-linux_armv7l.whl
+  wget -q https://huggingface.co/csukuangfj2/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx_core-$SHERPA_ONNX_VERSION-py3-none-manylinux_2_35_armv7l.whl
+  unzip ./sherpa_onnx_core-$SHERPA_ONNX_VERSION-py3-none-manylinux_2_35_armv7l.whl
 
-  cp -v sherpa_onnx/lib/*.so* $dst
+  rm -fv $dst/_sherpa*.so
+  cp -v sherpa_onnx/lib/lib*.so* $dst
 
   cd ..
   rm -rf t
@@ -85,13 +88,13 @@ function osx() {
 
   mkdir t
   cd t
-  wget -q https://huggingface.co/csukuangfj/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx-${SHERPA_ONNX_VERSION}-cp39-cp39-macosx_11_0_x86_64.whl
-  unzip ./sherpa_onnx-${SHERPA_ONNX_VERSION}-cp39-cp39-macosx_11_0_x86_64.whl
+  wget -q https://huggingface.co/csukuangfj2/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-macosx_10_15_x86_64.whl
+  unzip ./sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-macosx_10_15_x86_64.whl
 
   cp -v sherpa_onnx/lib/*.dylib $dst/
 
   pushd $dst
-  cp -v libonnxruntime.1.17.1.dylib libonnxruntime.dylib
+  cp -v libonnxruntime.*.dylib libonnxruntime.dylib
   popd
 
   cd ..
@@ -103,13 +106,13 @@ function osx() {
 
   mkdir t
   cd t
-  wget -q https://huggingface.co/csukuangfj/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx-${SHERPA_ONNX_VERSION}-cp39-cp39-macosx_11_0_arm64.whl
-  unzip ./sherpa_onnx-${SHERPA_ONNX_VERSION}-cp39-cp39-macosx_11_0_arm64.whl
+  wget -q https://huggingface.co/csukuangfj2/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-macosx_11_0_arm64.whl
+  unzip ./sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-macosx_11_0_arm64.whl
 
   cp -v sherpa_onnx/lib/*.dylib $dst/
 
   pushd $dst
-  cp -v libonnxruntime.1.17.1.dylib libonnxruntime.dylib
+  cp -v libonnxruntime.*.dylib libonnxruntime.dylib
   popd
 
   cd ..
@@ -138,10 +141,10 @@ function windows() {
   dst=$(realpath sherpa-onnx-go-windows/lib/x86_64-pc-windows-gnu)
   mkdir t
   cd t
-  wget -q https://huggingface.co/csukuangfj/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-win_amd64.whl
-  unzip ./sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-win_amd64.whl
+  wget -q https://huggingface.co/csukuangfj2/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-win_amd64.whl
+  unzip ./sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-win_amd64.whl
 
-  cp -v sherpa_onnx-${SHERPA_ONNX_VERSION}.data/data/bin/*.dll $dst
+  cp -v sherpa_onnx/lib/*.dll $dst
 
   cd ..
   rm -rf t
@@ -150,10 +153,10 @@ function windows() {
   dst=$(realpath sherpa-onnx-go-windows/lib/i686-pc-windows-gnu)
   mkdir t
   cd t
-  wget -q https://huggingface.co/csukuangfj/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-win32.whl
-  unzip ./sherpa_onnx-${SHERPA_ONNX_VERSION}-cp38-cp38-win32.whl
+  wget -q https://huggingface.co/csukuangfj2/sherpa-onnx-wheels/resolve/main/cpu/$SHERPA_ONNX_VERSION/sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-win32.whl
+  unzip ./sherpa_onnx_core-${SHERPA_ONNX_VERSION}-py3-none-win32.whl
 
-  cp -v sherpa_onnx-${SHERPA_ONNX_VERSION}.data/data/bin/*.dll $dst
+  cp -v sherpa_onnx/lib/*.dll $dst
 
   cd ..
   rm -rf t
@@ -169,7 +172,25 @@ function windows() {
   rm -rf sherpa-onnx-go-windows
 }
 
+function basic() {
+  echo "Process sherpa-onnx-go"
+  git clone git@github.com:k2-fsa/sherpa-onnx-go.git
 
+  python3 ./generate.py -s ./sherpa_onnx.go -o ./sherpa-onnx-go
+
+  echo "------------------------------"
+  cd sherpa-onnx-go
+  git status
+  git add .
+  git commit -m "Release v$SHERPA_ONNX_VERSION" && \
+    git push && \
+    git tag v$SHERPA_ONNX_VERSION && \
+    git push origin v$SHERPA_ONNX_VERSION
+  cd ..
+  rm -rf sherpa-onnx-go
+}
+
+basic
 windows
 linux
 osx

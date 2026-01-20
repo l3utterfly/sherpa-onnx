@@ -16,19 +16,6 @@ on:
       - '.github/scripts/test-online-ctc.sh'
       - 'cmake/**'
       - 'sherpa-onnx/csrc/*'
-  pull_request:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/windows-x86-debug.yaml'
-      - '.github/scripts/test-online-transducer.sh'
-      - '.github/scripts/test-online-paraformer.sh'
-      - '.github/scripts/test-offline-transducer.sh'
-      - '.github/scripts/test-offline-ctc.sh'
-      - '.github/scripts/test-offline-tts.sh'
-      - '.github/scripts/test-online-ctc.sh'
-      - 'cmake/**'
-      - 'sherpa-onnx/csrc/*'
 
   workflow_dispatch:
 
@@ -43,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
+        os: [windows-2022]
         shared_lib: [OFF]
         build_type: [Debug, MinSizeRel, RelWithDebInfo]
 
@@ -52,6 +39,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Update version
+        shell: bash
+        run: |
+          ./new-release.sh
+          git diff .
+
       - name: Configure CMake
         shell: bash
         run: |
@@ -59,6 +52,7 @@ jobs:
           cd build
           cmake \
             -A Win32 \
+            -D SHERPA_ONNX_ENABLE_PORTAUDIO=OFF \
             -D CMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -D BUILD_SHARED_LIBS=${{ matrix.shared_lib }} \
             -D CMAKE_INSTALL_PREFIX=./install ..

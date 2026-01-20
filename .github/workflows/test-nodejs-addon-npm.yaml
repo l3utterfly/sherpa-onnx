@@ -13,17 +13,6 @@ on:
       - 'scripts/node-addon-api/*.js'
       - 'nodejs-addon-examples/package.json'
 
-  pull_request:
-    branches:
-      - master
-    paths:
-      - '.github/workflows/test-nodejs-addon-npm.yaml'
-      - 'cmake/**'
-      - 'sherpa-onnx/csrc/*'
-      - 'sherpa-onnx/c-api/*'
-      - 'scripts/node-addon-api/*.js'
-      - 'nodejs-addon-examples/package.json'
-
   workflow_dispatch:
 
 concurrency:
@@ -40,13 +29,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, macos-14, ubuntu-latest, ubuntu-22.04, windows-latest]
+        os: [macos-latest, macos-14, ubuntu-latest, ubuntu-22.04, windows-2022]
         node-version: ["16", "17", "18", "19", "21", "22"]
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Update version
+        shell: bash
+        run: |
+          ./new-release.sh
+          git diff .
 
       - uses: actions/setup-node@v4
         with:

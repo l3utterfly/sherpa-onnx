@@ -69,8 +69,6 @@ function fileExists(filename) {
   return exists;
 }
 
-function createOfflineRecognizerSenseVoice() {}
-
 function initOfflineRecognizer() {
   let config = {
     modelConfig: {
@@ -117,6 +115,10 @@ function initOfflineRecognizer() {
     };
   } else if (fileExists('dolphin.onnx')) {
     config.modelConfig.dolphin = {model: './dolphin.onnx'};
+  } else if (fileExists('zipformer-ctc.onnx')) {
+    // you need to rename model.int8.onnx from zipformer CTC to
+    // zipformer-ctc.onnx
+    config.modelConfig.zipformerCtc = {model: './zipformer-ctc.onnx'};
   } else {
     console.log('Please specify a model.');
     alert('Please specify a model.');
@@ -138,6 +140,18 @@ Module.setStatus = function(status) {
   if (status == 'Running...') {
     status = 'Model downloaded. Initializing recongizer...'
   }
+
+  const downloadMatch = status.match(/Downloading data... \((\d+)\/(\d+)\)/);
+  if (downloadMatch) {
+    const downloaded = BigInt(downloadMatch[1]);
+    const total = BigInt(downloadMatch[2]);
+    const percent =
+        total === 0 ? 0.00 : Number((downloaded * 10000n) / total) / 100;
+    status = `Downloading data... ${percent.toFixed(2)}% (${downloadMatch[1]}/${
+        downloadMatch[2]})`;
+    console.log(`here ${status}`)
+  }
+
   statusElement.textContent = status;
   if (status === '') {
     statusElement.style.display = 'none';

@@ -17,13 +17,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-2019]
+        os: [windows-2022]
         arch: [x64, x86, arm64]
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Update version
+        shell: bash
+        run: |
+          ./new-release.sh
+          git diff .
 
       - name: Build sherpa-onnx
         shell: bash
@@ -91,7 +97,7 @@ jobs:
             export GIT_CLONE_PROTECTION_ACTIVE=false
             export GIT_LFS_SKIP_SMUDGE=1
 
-            git clone https://csukuangfj:$HF_TOKEN@huggingface.co/csukuangfj/sherpa-onnx-libs huggingface
+            git clone https://csukuangfj2:$HF_TOKEN@huggingface.co/csukuangfj2/sherpa-onnx-libs huggingface
 
             cd huggingface
             git fetch
@@ -108,7 +114,7 @@ jobs:
 
             git commit -m "add more files"
 
-            git push https://csukuangfj:$HF_TOKEN@huggingface.co/csukuangfj/sherpa-onnx-libs main
+            git push https://csukuangfj2:$HF_TOKEN@huggingface.co/csukuangfj2/sherpa-onnx-libs main
             rm -rf huggingface
 
   release-nuget-package:
