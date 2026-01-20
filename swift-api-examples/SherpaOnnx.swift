@@ -1134,7 +1134,7 @@ class SherpaOnnxOfflineTtsWrapper {
   }
 
   func generateWithCallbackWithArg(
-    text: String, callback: TtsCallbackWithArg, arg: UnsafeMutableRawPointer, sid: Int = 0,
+    text: String, callback: TtsCallbackWithArg, arg: UnsafeMutableRawPointer?, sid: Int = 0,
     speed: Float = 1.0
   ) -> SherpaOnnxGeneratedAudioWrapper {
     let audio: UnsafePointer<SherpaOnnxGeneratedAudio>? =
@@ -1142,6 +1142,10 @@ class SherpaOnnxOfflineTtsWrapper {
         tts, toCPointer(text), Int32(sid), speed, callback, arg)
 
     return SherpaOnnxGeneratedAudioWrapper(audio: audio)
+  }
+  
+  func sampleRate() -> Int32 {
+    return SherpaOnnxOfflineTtsSampleRate(tts)
   }
 }
 
