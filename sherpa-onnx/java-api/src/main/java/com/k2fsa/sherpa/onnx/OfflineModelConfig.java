@@ -15,7 +15,9 @@ public class OfflineModelConfig {
     private final OfflineWenetCtcModelConfig wenetCtc;
     private final OfflineOmnilingualAsrCtcModelConfig omnilingual;
     private final OfflineMedAsrCtcModelConfig medasr;
+    private final OfflineFireRedAsrCtcModelConfig fireRedAsrCtc;
     private final OfflineFunAsrNanoModelConfig funasrNano;
+    private final OfflineQwen3AsrModelConfig qwen3Asr;
     private final OfflineCanaryModelConfig canary;
     private final String teleSpeech;
     private final String tokens;
@@ -39,7 +41,9 @@ public class OfflineModelConfig {
         this.wenetCtc = builder.wenetCtc;
         this.omnilingual = builder.omnilingual;
         this.medasr = builder.medasr;
+        this.fireRedAsrCtc = builder.fireRedAsrCtc;
         this.funasrNano = builder.funasrNano;
+        this.qwen3Asr = builder.qwen3Asr;
         this.senseVoice = builder.senseVoice;
         this.dolphin = builder.dolphin;
         this.teleSpeech = builder.teleSpeech;
@@ -100,8 +104,20 @@ public class OfflineModelConfig {
         return medasr;
     }
 
+    public OfflineFireRedAsrCtcModelConfig getFireRedAsrCtc() {
+        return fireRedAsrCtc;
+    }
+
+    public OfflineFireRedAsrModelConfig getFireRedAsr() {
+        return fireRedAsr;
+    }
+
     public OfflineFunAsrNanoModelConfig getFunAsrNano() {
         return funasrNano;
+    }
+
+    public OfflineQwen3AsrModelConfig getQwen3Asr() {
+        return qwen3Asr;
     }
 
     public OfflineCanaryModelConfig getCanary() {
@@ -153,7 +169,9 @@ public class OfflineModelConfig {
         private OfflineWenetCtcModelConfig wenetCtc = OfflineWenetCtcModelConfig.builder().build();
         private OfflineOmnilingualAsrCtcModelConfig omnilingual = OfflineOmnilingualAsrCtcModelConfig.builder().build();
         private OfflineMedAsrCtcModelConfig medasr = OfflineMedAsrCtcModelConfig.builder().build();
+        private OfflineFireRedAsrCtcModelConfig fireRedAsrCtc = OfflineFireRedAsrCtcModelConfig.builder().build();
         private OfflineFunAsrNanoModelConfig funasrNano = OfflineFunAsrNanoModelConfig.builder().build();
+        private OfflineQwen3AsrModelConfig qwen3Asr = OfflineQwen3AsrModelConfig.builder().build();
         private OfflineCanaryModelConfig canary = OfflineCanaryModelConfig.builder().build();
         private String teleSpeech = "";
         private String tokens = "";
@@ -208,8 +226,18 @@ public class OfflineModelConfig {
             return this;
         }
 
+        public Builder setFireRedAsrCtc(OfflineFireRedAsrCtcModelConfig fireRedAsrCtc) {
+            this.fireRedAsrCtc = fireRedAsrCtc;
+            return this;
+        }
+
         public Builder setFunAsrNano(OfflineFunAsrNanoModelConfig funasrNano) {
             this.funasrNano = funasrNano;
+            return this;
+        }
+
+        public Builder setQwen3Asr(OfflineQwen3AsrModelConfig qwen3Asr) {
+            this.qwen3Asr = qwen3Asr;
             return this;
         }
 
