@@ -109,6 +109,8 @@ OfflineSourceSeparationInput OfflineSourceSeparationImpl::Resample(
 }
 
 #if __ANDROID_API__ >= 9
+#include <android/asset_manager.h>
+
 template std::unique_ptr<OfflineSourceSeparationImpl>
 OfflineSourceSeparationImpl::Create(
     AAssetManager *mgr, const OfflineSourceSeparationConfig &config);

@@ -1343,7 +1343,7 @@ class SherpaOnnxOfflineTtsWrapper {
   }
 
   func generateWithCallbackWithArg(
-    text: String, callback: TtsCallbackWithArg, arg: UnsafeMutableRawPointer, sid: Int = 0,
+    text: String, callback: TtsCallbackWithArg, arg: UnsafeMutableRawPointer?, sid: Int = 0,
     speed: Float = 1.0
   ) -> SherpaOnnxGeneratedAudioWrapper {
     let config = SherpaOnnxGenerationConfigSwift(speed: speed, sid: sid)
