@@ -316,6 +316,7 @@ class OfflineQwen3AsrModelConfig {
     this.temperature = 1e-6,
     this.topP = 0.8,
     this.seed = 42,
+    this.hotwords = '',
   });
 
   factory OfflineQwen3AsrModelConfig.fromJson(Map<String, dynamic> json) {
@@ -329,12 +330,13 @@ class OfflineQwen3AsrModelConfig {
       temperature: (json['temperature'] as num?)?.toDouble() ?? 1e-6,
       topP: (json['topP'] as num?)?.toDouble() ?? 0.8,
       seed: json['seed'] as int? ?? 42,
+      hotwords: json['hotwords'] as String? ?? '',
     );
   }
 
   @override
   String toString() {
-    return 'OfflineQwen3AsrModelConfig(convFrontend: $convFrontend, encoder: $encoder, decoder: $decoder, tokenizer: $tokenizer, maxTotalLen: $maxTotalLen, maxNewTokens: $maxNewTokens, temperature: $temperature, topP: $topP, seed: $seed)';
+    return 'OfflineQwen3AsrModelConfig(convFrontend: $convFrontend, encoder: $encoder, decoder: $decoder, tokenizer: $tokenizer, maxTotalLen: $maxTotalLen, maxNewTokens: $maxNewTokens, temperature: $temperature, topP: $topP, seed: $seed, hotwords: $hotwords)';
   }
 
   Map<String, dynamic> toJson() => {
@@ -347,6 +349,7 @@ class OfflineQwen3AsrModelConfig {
     'temperature': temperature,
     'topP': topP,
     'seed': seed,
+    'hotwords': hotwords,
   };
 
   final String convFrontend;
@@ -358,6 +361,7 @@ class OfflineQwen3AsrModelConfig {
   final double temperature;
   final double topP;
   final int seed;
+  final String hotwords;
 }
 
 /// Model files and options for an offline Whisper recognizer.
@@ -447,6 +451,48 @@ class OfflineCanaryModelConfig {
   final String srcLang;
   final String tgtLang;
   final bool usePnc;
+}
+
+/// Model files and text options for Cohere Transcribe.
+class OfflineCohereTranscribeModelConfig {
+  const OfflineCohereTranscribeModelConfig({
+    this.encoder = '',
+    this.decoder = '',
+    this.language = '',
+    this.usePunct = true,
+    this.useItn = true,
+  });
+
+  factory OfflineCohereTranscribeModelConfig.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    return OfflineCohereTranscribeModelConfig(
+      encoder: json['encoder'] as String? ?? '',
+      decoder: json['decoder'] as String? ?? '',
+      language: json['language'] as String? ?? '',
+      usePunct: json['usePunct'] as bool? ?? true,
+      useItn: json['useItn'] as bool? ?? true,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'OfflineCohereTranscribeModelConfig(encoder: $encoder, decoder: $decoder, language: $language, usePunct: $usePunct, useItn: $useItn)';
+  }
+
+  Map<String, dynamic> toJson() => {
+    'encoder': encoder,
+    'decoder': decoder,
+    'language': language,
+    'usePunct': usePunct,
+    'useItn': useItn,
+  };
+
+  final String encoder;
+  final String decoder;
+  final String language;
+  final bool usePunct;
+  final bool useItn;
 }
 
 /// Model files for the Fire-Red-ASR transducer recognizer.
@@ -618,6 +664,7 @@ class OfflineModelConfig {
     this.funasrNano = const OfflineFunAsrNanoModelConfig(),
     this.fireRedAsrCtc = const OfflineFireRedAsrCtcModelConfig(),
     this.qwen3Asr = const OfflineQwen3AsrModelConfig(),
+    this.cohereTranscribe = const OfflineCohereTranscribeModelConfig(),
     required this.tokens,
     this.numThreads = 1,
     this.debug = true,
@@ -715,6 +762,11 @@ class OfflineModelConfig {
               json['qwen3Asr'] as Map<String, dynamic>,
             )
           : const OfflineQwen3AsrModelConfig(),
+      cohereTranscribe: json['cohereTranscribe'] != null
+          ? OfflineCohereTranscribeModelConfig.fromJson(
+              json['cohereTranscribe'] as Map<String, dynamic>,
+            )
+          : const OfflineCohereTranscribeModelConfig(),
       tokens: json['tokens'] as String,
       numThreads: json['numThreads'] as int? ?? 1,
       debug: json['debug'] as bool? ?? true,
@@ -728,7 +780,7 @@ class OfflineModelConfig {
 
   @override
   String toString() {
-    return 'OfflineModelConfig(transducer: $transducer, paraformer: $paraformer, nemoCtc: $nemoCtc, whisper: $whisper, tdnn: $tdnn, senseVoice: $senseVoice, moonshine: $moonshine, fireRedAsr: $fireRedAsr, dolphin: $dolphin, zipformerCtc: $zipformerCtc, canary: $canary, wenetCtc: $wenetCtc, omnilingual: $omnilingual, medasr: $medasr, funasrNano: $funasrNano, fireRedAsrCtc: $fireRedAsrCtc, qwen3Asr: $qwen3Asr, tokens: $tokens, numThreads: $numThreads, debug: $debug, provider: $provider, modelType: $modelType, modelingUnit: $modelingUnit, bpeVocab: $bpeVocab, telespeechCtc: $telespeechCtc)';
+    return 'OfflineModelConfig(transducer: $transducer, paraformer: $paraformer, nemoCtc: $nemoCtc, whisper: $whisper, tdnn: $tdnn, senseVoice: $senseVoice, moonshine: $moonshine, fireRedAsr: $fireRedAsr, dolphin: $dolphin, zipformerCtc: $zipformerCtc, canary: $canary, wenetCtc: $wenetCtc, omnilingual: $omnilingual, medasr: $medasr, funasrNano: $funasrNano, fireRedAsrCtc: $fireRedAsrCtc, qwen3Asr: $qwen3Asr, cohereTranscribe: $cohereTranscribe, tokens: $tokens, numThreads: $numThreads, debug: $debug, provider: $provider, modelType: $modelType, modelingUnit: $modelingUnit, bpeVocab: $bpeVocab, telespeechCtc: $telespeechCtc)';
   }
 
   Map<String, dynamic> toJson() => {
@@ -749,6 +801,7 @@ class OfflineModelConfig {
     'funasrNano': funasrNano.toJson(),
     'fireRedAsrCtc': fireRedAsrCtc.toJson(),
     'qwen3Asr': qwen3Asr.toJson(),
+    'cohereTranscribe': cohereTranscribe.toJson(),
     'tokens': tokens,
     'numThreads': numThreads,
     'debug': debug,
@@ -776,6 +829,7 @@ class OfflineModelConfig {
   final OfflineFunAsrNanoModelConfig funasrNano;
   final OfflineFireRedAsrCtcModelConfig fireRedAsrCtc;
   final OfflineQwen3AsrModelConfig qwen3Asr;
+  final OfflineCohereTranscribeModelConfig cohereTranscribe;
 
   final String tokens;
   final int numThreads;
@@ -1102,6 +1156,28 @@ class OfflineRecognizer {
     c.ref.model.qwen3Asr.temperature = config.model.qwen3Asr.temperature;
     c.ref.model.qwen3Asr.topP = config.model.qwen3Asr.topP;
     c.ref.model.qwen3Asr.seed = config.model.qwen3Asr.seed;
+    c.ref.model.qwen3Asr.hotwords = config.model.qwen3Asr.hotwords
+        .toNativeUtf8();
+
+    c.ref.model.cohereTranscribe.encoder = config
+        .model
+        .cohereTranscribe
+        .encoder
+        .toNativeUtf8();
+    c.ref.model.cohereTranscribe.decoder = config
+        .model
+        .cohereTranscribe
+        .decoder
+        .toNativeUtf8();
+    c.ref.model.cohereTranscribe.language = config
+        .model
+        .cohereTranscribe
+        .language
+        .toNativeUtf8();
+    c.ref.model.cohereTranscribe.usePunct =
+        config.model.cohereTranscribe.usePunct ? 1 : 0;
+    c.ref.model.cohereTranscribe.useItn =
+        config.model.cohereTranscribe.useItn ? 1 : 0;
 
     c.ref.model.tokens = config.model.tokens.toNativeUtf8();
 
@@ -1147,10 +1223,14 @@ class OfflineRecognizer {
     calloc.free(c.ref.model.modelType);
     calloc.free(c.ref.model.provider);
     calloc.free(c.ref.model.tokens);
+    calloc.free(c.ref.model.qwen3Asr.hotwords);
     calloc.free(c.ref.model.qwen3Asr.tokenizer);
     calloc.free(c.ref.model.qwen3Asr.decoder);
     calloc.free(c.ref.model.qwen3Asr.encoder);
     calloc.free(c.ref.model.qwen3Asr.convFrontend);
+    calloc.free(c.ref.model.cohereTranscribe.language);
+    calloc.free(c.ref.model.cohereTranscribe.decoder);
+    calloc.free(c.ref.model.cohereTranscribe.encoder);
     calloc.free(c.ref.model.fireRedAsrCtc.model);
     calloc.free(c.ref.model.funasrNano.hotwords);
     calloc.free(c.ref.model.funasrNano.language);

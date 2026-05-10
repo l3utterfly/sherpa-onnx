@@ -5,8 +5,8 @@
 #define SHERPA_ONNX_CSRC_OFFLINE_TTS_VITS_IMPL_H_
 
 #include <memory>
-#include <string>
 #include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -15,6 +15,7 @@
 #include "kaldifst/csrc/text-normalizer.h"
 #include "sherpa-onnx/csrc/character-lexicon.h"
 #include "sherpa-onnx/csrc/file-utils.h"
+#include "sherpa-onnx/csrc/fst-utils.h"
 #include "sherpa-onnx/csrc/lexicon.h"
 #include "sherpa-onnx/csrc/macros.h"
 #include "sherpa-onnx/csrc/melo-tts-lexicon.h"
@@ -124,21 +125,13 @@ class OfflineTtsVitsImpl : public OfflineTtsImpl {
 
         auto buf = ReadFile(mgr, f);
 
-        std::unique_ptr<std::istream> s(
-            new std::istringstream(std::string(buf.data(), buf.size())));
-
-        std::unique_ptr<fst::FarReader<fst::StdArc>> reader(
-            fst::FarReader<fst::StdArc>::Open(std::move(s)));
-
-        for (; !reader->Done(); reader->Next()) {
-          std::unique_ptr<fst::StdConstFst> r(
-              fst::CastOrConvertToConstFst(reader->GetFst()->Copy()));
-
+        auto fsts = ReadFstsFromFar(buf);
+        for (auto &r : fsts) {
           tn_list_.push_back(
               std::make_unique<kaldifst::TextNormalizer>(std::move(r)));
-        }  // for (; !reader->Done(); reader->Next())
-      }    // for (const auto &f : files)
-    }      // if (!config.rule_fars.empty())
+        }
+      }  // for (const auto &f : files)
+    }  // if (!config.rule_fars.empty())
   }
 
   int32_t SampleRate() const override {
@@ -312,8 +305,8 @@ class OfflineTtsVitsImpl : public OfflineTtsImpl {
         }
       }
 
-      auto audio = Process(batch_x, batch_tones, sid, speed,
-                           gen_config.silence_scale);
+      auto audio =
+          Process(batch_x, batch_tones, sid, speed, gen_config.silence_scale);
       ans.sample_rate = audio.sample_rate;
       ans.samples.insert(ans.samples.end(), audio.samples.begin(),
                          audio.samples.end());
@@ -377,10 +370,10 @@ class OfflineTtsVitsImpl : public OfflineTtsImpl {
       frontend_ = std::make_unique<MeloTtsLexicon>(
           mgr, config_.model.vits.lexicon, config_.model.vits.tokens,
           model_->GetMetaData(), config_.model.debug);
-    } else if (meta_data.jieba) {
+    } else if (meta_data.jieba || meta_data.use_g2pw) {
       frontend_ = std::make_unique<CharacterLexicon>(
           mgr, config_.model.vits.lexicon, config_.model.vits.tokens,
-          config_.model.debug);
+          config_.model.debug, meta_data.use_g2pw);
     } else if (meta_data.is_melo_tts && meta_data.language == "English") {
       frontend_ = std::make_unique<MeloTtsLexicon>(
           mgr, config_.model.vits.lexicon, config_.model.vits.tokens,
@@ -419,10 +412,10 @@ class OfflineTtsVitsImpl : public OfflineTtsImpl {
       frontend_ = std::make_unique<MeloTtsLexicon>(
           config_.model.vits.lexicon, config_.model.vits.tokens,
           model_->GetMetaData(), config_.model.debug);
-    } else if (meta_data.jieba) {
-      frontend_ = std::make_unique<CharacterLexicon>(config_.model.vits.lexicon,
-                                                     config_.model.vits.tokens,
-                                                     config_.model.debug);
+    } else if (meta_data.jieba || meta_data.use_g2pw) {
+      frontend_ = std::make_unique<CharacterLexicon>(
+          config_.model.vits.lexicon, config_.model.vits.tokens,
+          config_.model.debug, meta_data.use_g2pw);
     } else if ((meta_data.is_piper || meta_data.is_coqui ||
                 meta_data.is_icefall) &&
                !config_.model.vits.data_dir.empty()) {
@@ -444,8 +437,7 @@ class OfflineTtsVitsImpl : public OfflineTtsImpl {
 
   GeneratedAudio Process(const std::vector<std::vector<int64_t>> &tokens,
                          const std::vector<std::vector<int64_t>> &tones,
-                         int32_t sid, float speed,
-                         float silence_scale) const {
+                         int32_t sid, float speed, float silence_scale) const {
     int32_t num_tokens = 0;
     for (const auto &k : tokens) {
       num_tokens += k.size();

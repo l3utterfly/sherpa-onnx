@@ -1,3 +1,95 @@
+## 1.13.1
+
+* Fix bugs in NeMo transducer modified beam search (#3589)
+* Add bounds checks to prevent SIGSEGV in speaker diarization (#3563)
+* Replace dead link with archived link (#3576)
+* Fix x64 gpu onnxruntime url (#3578)
+* Per-stream use_itn override via Stream::GetOptionInt for SenseVoice (#3565)
+
+## 1.13.0
+
+* Fix Flutter CI (#3560)
+* Fix building Flutter Android APPs (#3559)
+* Export nvidia/parakeet-unified-en-0.6b to sherpa-onnx (#3556)
+* Update nemotron-speech-streaming-en-0.6b (#3555)
+* Expose log probabilities in OfflineRecognizerResult for Go binding (#3553)
+
+## 1.12.40
+
+* Add more Piper TTS models (#3547)
+* Add two Piper Chinese TTS models (#3546)
+* Upload the piper sq_AL model (#3541)
+* Add Albanian (sq_AL) Piper TTS voice by LanguageWeaver (#3539)
+* Add Tauri APP demo for VAD+ASR from a microphone (#3540)
+* Improve Tauri VAD+ASR example: settings UI, bug fixes, and RTF display (#3538)
+* Fix releasing go packages (#3537)
+* Fix publishing dart packages for Android (#3522)
+* Avoid passing invalid utf8 str to JNI (#3527)
+* Build Tauri desktop APPs for VAD+ASR (#3530)
+
+## 1.12.39
+
+* Add tauri app example for non-streaming ASR + VAD (#3520)
+* Check for nullptr in c/cxx API (#3515)
+* Update go.mod and go.sum for the sherpa-onnx-go package. (#3516)
+* Fix an offset-by-one error in pyannote speaker diarization. (#3514)
+* Set context for thread in Ascend NPU (#3512)
+* Enable proxy support for downloader via ureq's proxy-from-env feature in rust-binding build.rs (#3507)
+* Add script to download all dependencies for offline use (#3506)
+* Update Eigen to v5.0.1 (#3505)
+* Fix building Python wheels for Windows (#3504)
+* Expose memory-related session options via config (#3503)
+
+## 1.12.38
+
+* Update onnxruntime to use v1.24.4 (#3501)
+
+## 1.12.37
+
+* Update openfst to v1.8.5 and fix compiler warnings. (#3495)
+* Use onnxruntime 1.24.3 for Android (#3494)
+* Update FunASR Nano int8 models (#3493)
+* Fix incorrect URL in dotnet README (#3491)
+* Fix package name format for ort url (#3489)
+
+## 1.12.36
+
+* Dotnet Android arm64 targeting (#3485)
+* Use file path to initialize onnxruntime session. (#3482)
+* update onnxruntime package name and hash for riscv64-spacemit (#3481)
+* Fix initializing fp32 Qwen3-ASR models. (#3480)
+* Fix Qwen3ASR hotwords handling (#3477)
+* Update Qwen3 ASR models (#3476)
+* Fix building for vad+asr (#3475)
+* Add per-stream language hint for Qwen3-ASR (and tighten scaffold cleanup) (#3472)
+* Add hotwords argument to OfflineQwen3ASRModelConfig (#3468)
+
+## 1.12.35
+
+* Add Go API for Cohere Transcribe (#3466)
+* Add Rust API for Cohere Transcribe (#3465)
+* Add Dart API for Cohere Transcribe (#3464)
+* Add C# API for Cohere Transcribe (#3462)
+* Add Pascal API for Cohere Transcribe (#3463)
+* Add Java and Kotlin API for Cohere Transcribe (#3461)
+* Add JavaScript API for Cohere Transcribe. (#3458)
+* Add Swift API for Cohere Transcribe (#3460)
+* Add C API and CXX API for Cohere transcribe models (#3457)
+* Add C++ runtime and Python API for Cohere Transcribe (#3456)
+* Upload models for https://huggingface.co/CohereLabs/cohere-transcribe-03-2026 (#3453)
+* Add issue template (#3452)
+* Add hotwords support for Qwen3-ASR (#3434)
+* Fix links in README.md to use correct casing (#3451)
+* Add Wake Word and decibri to projects using sherpa-onnx (#3447)
+* Remove num_threads assertion from OnlineRecognizer model configs (#3448)
+* Add Speed of Sound to projects using sherpa-onnx (#3438)
+* Fix Swift tests (#3433)
+* spacemit provider: add provider with config file, then update to 2.0.2 (#3421)
+* Add Go API for source separation (#3432)
+* Fix C API for reading multi-channel wave files (#3430)
+* Add Swift API for source separation (#3426)
+* Fix CI tests (#3429)
+
 ## 1.12.34
 
 * Add Pascal API for Qwen3 ASR (#3424)

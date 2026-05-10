@@ -69,6 +69,25 @@ def get_args():
     )
 
     parser.add_argument(
+        "--hotwords",
+        type=str,
+        default="",
+        required=False,
+        help="""
+        Optional comma-separated hotword phrases for Qwen3-ASR, e.g.
+        "foo,bar,baz"
+        """,
+    )
+
+    parser.add_argument(
+        "--language",
+        type=str,
+        default="",
+        required=False,
+        help="Force transcription language, e.g. Korean, Chinese, English",
+    )
+
+    parser.add_argument(
         "--max-total-len",
         type=int,
         default=512,
@@ -154,6 +173,7 @@ def create_recognizer(args) -> sherpa_onnx.OfflineRecognizer:
         encoder=args.encoder,
         decoder=args.decoder,
         tokenizer=args.tokenizer,
+        hotwords=args.hotwords,
         num_threads=args.num_threads,
         sample_rate=args.sample_rate,
         feature_dim=args.feature_dim,
@@ -167,11 +187,15 @@ def create_recognizer(args) -> sherpa_onnx.OfflineRecognizer:
     )
 
 
-def decode_file(recognizer: sherpa_onnx.OfflineRecognizer, filename: str):
+def decode_file(
+    recognizer: sherpa_onnx.OfflineRecognizer, filename: str, language: str = ""
+):
     audio, sample_rate = sf.read(filename, dtype="float32", always_2d=True)
     audio = audio[:, 0]
 
     stream = recognizer.create_stream()
+    if language:
+        stream.set_option("language", language)
     stream.accept_waveform(sample_rate, audio)
     recognizer.decode_stream(stream)
     return stream.result
@@ -188,7 +212,7 @@ def main():
         if not Path(f).is_file():
             print(f"Skip missing file: {f}", file=sys.stderr)
             continue
-        result = decode_file(recognizer, f)
+        result = decode_file(recognizer, f, language=args.language)
         print(f"{f}\n  text: {result.text}\n")
 
 

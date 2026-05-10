@@ -6,11 +6,13 @@ cd dart-api-examples
 
 pushd non-streaming-asr
 
-if [[ "$SKIP_QWEN3" != "true" ]]; then
-  echo '----------Qwen3 ASR----------'
-  ./run-qwen3-asr.sh
-  rm -rf sherpa-onnx-*
-fi
+echo '----------Cohere Transcribe----------'
+./run-cohere-transcribe.sh
+rm -rf sherpa-onnx-*
+
+echo '----------Qwen3 ASR----------'
+./run-qwen3-asr.sh
+rm -rf sherpa-onnx-*
 
 echo '----------Moonshine v2----------'
 ./run-moonshine-v2.sh

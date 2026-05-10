@@ -29,6 +29,9 @@ set(sources
   normal-data-generator.cc
   offline-canary-model-config.cc
   offline-canary-model.cc
+  offline-cohere-transcribe-greedy-search-decoder.cc
+  offline-cohere-transcribe-model-config.cc
+  offline-cohere-transcribe-model.cc
   offline-ctc-fst-decoder-config.cc
   offline-ctc-fst-decoder.cc
   offline-ctc-greedy-search-decoder.cc
@@ -46,10 +49,10 @@ set(sources
   offline-medasr-ctc-model.cc
   offline-model-config.cc
   offline-moonshine-greedy-search-decoder.cc
-  offline-moonshine-v2-greedy-search-decoder.cc
   offline-moonshine-model-config.cc
   offline-moonshine-model-v2.cc
   offline-moonshine-model.cc
+  offline-moonshine-v2-greedy-search-decoder.cc
   offline-nemo-enc-dec-ctc-model-config.cc
   offline-nemo-enc-dec-ctc-model.cc
   offline-omnilingual-asr-ctc-model-config.cc
@@ -111,10 +114,12 @@ set(sources
   online-t-one-ctc-model.cc
   online-transducer-decoder.cc
   online-transducer-greedy-search-decoder.cc
+  online-transducer-greedy-search-nemo-parakeet-unified-decoder.cc
   online-transducer-greedy-search-nemo-decoder.cc
   online-transducer-model-config.cc
   online-transducer-model.cc
   online-transducer-modified-beam-search-decoder.cc
+  online-transducer-nemo-parakeet-unified-model.cc
   online-transducer-nemo-model.cc
   online-wenet-ctc-model-config.cc
   online-wenet-ctc-model.cc
@@ -324,6 +329,14 @@ if(SHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION)
   )
 endif()
 
+if(APPLE)
+  set_source_files_properties(
+    fast-clustering.cc
+    PROPERTIES
+      COMPILE_OPTIONS "-Wno-unknown-pragmas"
+  )
+endif()
+
 if(SHERPA_ONNX_ENABLE_CHECK)
   list(APPEND sources log.cc)
 endif()
@@ -488,6 +501,9 @@ if(SHERPA_ONNX_ENABLE_BINARY)
   add_executable(sherpa-onnx-version sherpa-onnx-version.cc version.cc)
   add_executable(sherpa-onnx-vad sherpa-onnx-vad.cc)
 
+  add_executable(sherpa-onnx-vad-with-offline-asr sherpa-onnx-vad-with-offline-asr.cc)
+  add_executable(sherpa-onnx-vad-with-online-asr sherpa-onnx-vad-with-online-asr.cc)
+
   if(SHERPA_ONNX_ENABLE_TTS)
     add_executable(sherpa-onnx-offline-tts sherpa-onnx-offline-tts.cc)
   endif()
@@ -509,6 +525,8 @@ if(SHERPA_ONNX_ENABLE_BINARY)
     sherpa-onnx-online-denoiser
     sherpa-onnx-online-punctuation
     sherpa-onnx-vad
+    sherpa-onnx-vad-with-offline-asr
+    sherpa-onnx-vad-with-online-asr
   )
   if(SHERPA_ONNX_ENABLE_TTS)
     list(APPEND main_exes
@@ -564,7 +582,6 @@ if(SHERPA_ONNX_HAS_ALSA AND SHERPA_ONNX_ENABLE_BINARY)
   add_executable(sherpa-onnx-keyword-spotter-alsa sherpa-onnx-keyword-spotter-alsa.cc alsa.cc)
   add_executable(sherpa-onnx-vad-alsa sherpa-onnx-vad-alsa.cc alsa.cc)
   add_executable(sherpa-onnx-vad-alsa-offline-asr sherpa-onnx-vad-alsa-offline-asr.cc alsa.cc)
-
 
   if(SHERPA_ONNX_ENABLE_TTS)
     add_executable(sherpa-onnx-offline-tts-play-alsa sherpa-onnx-offline-tts-play-alsa.cc alsa-play.cc)
@@ -661,14 +678,6 @@ if(SHERPA_ONNX_ENABLE_PORTAUDIO AND SHERPA_ONNX_ENABLE_BINARY)
     microphone.cc
   )
 
-  add_executable(sherpa-onnx-vad-with-offline-asr
-    sherpa-onnx-vad-with-offline-asr.cc
-  )
-
-  add_executable(sherpa-onnx-vad-with-online-asr
-    sherpa-onnx-vad-with-online-asr.cc
-  )
-
   add_executable(sherpa-onnx-vad-microphone-offline-asr
     sherpa-onnx-vad-microphone-offline-asr.cc
     microphone.cc
@@ -693,9 +702,8 @@ if(SHERPA_ONNX_ENABLE_PORTAUDIO AND SHERPA_ONNX_ENABLE_BINARY)
     sherpa-onnx-vad-microphone
     sherpa-onnx-vad-microphone-simulated-streaming-asr
     sherpa-onnx-vad-microphone-offline-asr
-    sherpa-onnx-vad-with-offline-asr
-    sherpa-onnx-vad-with-online-asr
   )
+
   if(SHERPA_ONNX_ENABLE_TTS)
     list(APPEND exes
       sherpa-onnx-offline-tts-play

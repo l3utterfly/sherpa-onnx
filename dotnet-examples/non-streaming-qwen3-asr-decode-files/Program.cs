@@ -1,9 +1,9 @@
-// Copyright (c)  2026  Xiaomi Corporation
+﻿// Copyright (c)  2026  Xiaomi Corporation
 //
 // This file shows how to use a Qwen3 ASR model for speech recognition.
 //
 // You can find the model doc at
-// https://k2-fsa.github.io/sherpa/onnx/qwen3-asr.html
+// https://k2-fsa.github.io/sherpa/onnx/qwen3-asr
 using SherpaOnnx;
 
 class NonStreamingQwen3Asr
@@ -17,6 +17,7 @@ class NonStreamingQwen3Asr
     config.ModelConfig.Qwen3Asr.Encoder = "./sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/encoder.int8.onnx";
     config.ModelConfig.Qwen3Asr.Decoder = "./sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/decoder.int8.onnx";
     config.ModelConfig.Qwen3Asr.Tokenizer = "./sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/tokenizer";
+    config.ModelConfig.Qwen3Asr.Hotwords = "";
     config.ModelConfig.Tokens = "";
     config.ModelConfig.Debug = 1;
     var recognizer = new OfflineRecognizer(config);

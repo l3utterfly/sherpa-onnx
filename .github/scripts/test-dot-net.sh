@@ -4,21 +4,26 @@ set -ex
 
 cd dotnet-examples/
 
-if [[ "$SKIP_QWEN3" != "true" ]]; then
-  cd ./vad-non-streaming-qwen3-asr
-  ./run-ten-vad.sh
-  rm -fv *.onnx
+cd ./non-streaming-cohere-transcribe-decode-files
+./run.sh
+ls -lh
+rm -rf sherpa-onnx-cohere-transcribe-*
 
-  ./run.sh
-  rm -fv *.onnx
+cd ..
 
-  cd ../non-streaming-qwen3-asr-decode-files
-  ./run.sh
-  ls -lh
-  rm -rf sherpa-onnx-qwen3-*
+cd ./vad-non-streaming-qwen3-asr
+./run-ten-vad.sh
+rm -fv *.onnx
 
-  cd ..
-fi
+./run.sh
+rm -fv *.onnx
+
+cd ../non-streaming-qwen3-asr-decode-files
+./run.sh
+ls -lh
+rm -rf sherpa-onnx-qwen3-*
+
+cd ..
 
 cd ./source-separation-spleeter
 ./run.sh

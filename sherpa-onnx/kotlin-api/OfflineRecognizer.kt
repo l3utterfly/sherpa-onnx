@@ -80,6 +80,7 @@ data class OfflineQwen3AsrModelConfig(
     var temperature: Float = 1e-6f,
     var topP: Float = 0.8f,
     var seed: Int = 42,
+    var hotwords: String = "",
 )
 
 data class OfflineWhisperModelConfig(
@@ -98,6 +99,14 @@ data class OfflineCanaryModelConfig(
     var srcLang: String = "en",
     var tgtLang: String = "en",
     var usePnc: Boolean = true,
+)
+
+data class OfflineCohereTranscribeModelConfig(
+    var encoder: String = "",
+    var decoder: String = "",
+    var language: String = "",
+    var usePunct: Boolean = true,
+    var useItn: Boolean = true,
 )
 
 data class OfflineFireRedAsrModelConfig(
@@ -141,6 +150,8 @@ data class OfflineModelConfig(
     var qwen3Asr: OfflineQwen3AsrModelConfig = OfflineQwen3AsrModelConfig(),
     var fireRedAsrCtc: OfflineFireRedAsrCtcModelConfig = OfflineFireRedAsrCtcModelConfig(),
     var canary: OfflineCanaryModelConfig = OfflineCanaryModelConfig(),
+    var cohereTranscribe: OfflineCohereTranscribeModelConfig =
+        OfflineCohereTranscribeModelConfig(),
     var teleSpeech: String = "",
     var numThreads: Int = 1,
     var debug: Boolean = false,
@@ -193,6 +204,11 @@ class OfflineRecognizer(
         return OfflineStream(p)
     }
 
+    fun createStream(hotwords: String): OfflineStream {
+        val p = createStreamWithHotwords(ptr, hotwords)
+        return OfflineStream(p)
+    }
+
     fun getResult(stream: OfflineStream): OfflineRecognizerResult {
         return getResult(stream.ptr)
     }
@@ -204,6 +220,8 @@ class OfflineRecognizer(
     private external fun delete(ptr: Long)
 
     private external fun createStream(ptr: Long): Long
+
+    private external fun createStreamWithHotwords(ptr: Long, hotwords: String): Long
 
     private external fun setConfig(ptr: Long, config: OfflineRecognizerConfig)
 
@@ -804,6 +822,7 @@ fun getOfflineModelConfig(type: Int): OfflineModelConfig? {
                     tokenizer = "$modelDir/Qwen3-0.6B",
                 ),
                 tokens = "",
+                numThreads=3,
             )
         }
 
@@ -971,6 +990,19 @@ fun getOfflineModelConfig(type: Int): OfflineModelConfig? {
                 ),
                 tokens = "",
                 numThreads=3,
+            )
+        }
+
+        62 -> {
+            val modelDir = "sherpa-onnx-nemo-parakeet-unified-en-0.6b-int8-non-streaming"
+            return OfflineModelConfig(
+                transducer = OfflineTransducerModelConfig(
+                    encoder = "$modelDir/encoder.int8.onnx",
+                    decoder = "$modelDir/decoder.int8.onnx",
+                    joiner = "$modelDir/joiner.int8.onnx",
+                ),
+                tokens = "$modelDir/tokens.txt",
+                modelType = "nemo_transducer",
             )
         }
 

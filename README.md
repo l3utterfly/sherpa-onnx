@@ -91,6 +91,8 @@ on the following platforms and operating systems:
   - [旭日X3派][旭日X3派]
   - [爱芯派][爱芯派]
   - [RK3588][RK3588]
+  - [SpacemiT-K1][SpacemiT-K1]
+  - [SpacemiT-K3][SpacemiT-K3]
   - etc
 
 with the following APIs
@@ -462,6 +464,17 @@ command mode, and optional LLM post-processing.
 
 Video demo in Chinese: [fcitx5-vinput](https://www.bilibili.com/video/BV1a6cUzVE6F)
 
+### [Wake Word](https://github.com/analyticsinmotion/wake-word)
+
+A VS Code extension for hands-free voice-activated coding. It uses sherpa-onnx for real-time
+keyword spotting (KWS) to detect custom wake phrases and trigger VS Code commands by voice.
+Audio capture is handled by [decibri](https://github.com/analyticsinmotion/decibri), a
+cross-platform Node.js microphone streaming library with prebuilt native binaries.
+
+- [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=analytics-in-motion.wake-word)
+- [Open VSX](https://open-vsx.org/extension/analytics-in-motion/wake-word)
+- [decibri integration guides for sherpa-onnx](https://decibri.dev/docs/node/integrations/sherpa-onnx-stt.html)
+
 [silero-vad]: https://github.com/snakers4/silero-vad
 [Raspberry Pi]: https://www.raspberrypi.com/
 [RV1126]: https://www.rock-chips.com/uploads/pdf/2022.8.26/191/RV1126%20Brief%20Datasheet.pdf
@@ -629,3 +642,5 @@ Video demo in Chinese: [fcitx5-vinput](https://www.bilibili.com/video/BV1a6cUzVE
 [qnn-doc]: https://k2-fsa.github.io/sherpa/onnx/qnn/index.html
 [ascend-doc]: https://k2-fsa.github.io/sherpa/onnx/ascend/index.html
 [axera-npu]: https://axera-tech.com/Skill/166.html
+[SpacemiT-K1]: https://cdn-resource.spacemit.com/file/chip/K1/K1_brief_zh.pdf
+[SpacemiT-K3]: https://cdn-resource.spacemit.com/file/chip/K3/K3_brief_zh.pdf

@@ -500,6 +500,14 @@ type OfflineCanaryModelConfig struct {
 	UsePnc  int
 }
 
+type OfflineCohereTranscribeModelConfig struct {
+	Encoder string
+	Decoder string
+	Language string
+	UsePunct int
+	UseInverseTextNormalization int
+}
+
 type OfflineFireRedAsrModelConfig struct {
 	Encoder string
 	Decoder string
@@ -544,6 +552,7 @@ type OfflineQwen3ASRModelConfig struct {
 	Temperature  float32
 	TopP         float32
 	Seed         int
+	Hotwords     string
 }
 
 type OfflineTdnnModelConfig struct {
@@ -580,6 +589,7 @@ type OfflineModelConfig struct {
 	MedAsr        OfflineMedAsrCtcModelConfig
 	FireRedAsrCtc OfflineFireRedAsrCtcModelConfig
 	Qwen3ASR      OfflineQwen3ASRModelConfig
+	CohereTranscribe OfflineCohereTranscribeModelConfig
 	Tokens        string // Path to tokens.txt
 
 	// Number of threads to use for neural network computation
@@ -634,6 +644,7 @@ type OfflineRecognizerResult struct {
 	Tokens     []string
 	Timestamps []float32
 	Durations  []float32
+	YsLogProbs []float32
 	Lang       string
 	Emotion    string
 	Event      string
@@ -698,6 +709,12 @@ func newCOfflineRecognizerConfig(config *OfflineRecognizerConfig) *C.struct_Sher
 	c.model_config.canary.tgt_lang = C.CString(config.ModelConfig.Canary.TgtLang)
 	c.model_config.canary.use_pnc = C.int(config.ModelConfig.Canary.UsePnc)
 
+	c.model_config.cohere_transcribe.encoder = C.CString(config.ModelConfig.CohereTranscribe.Encoder)
+	c.model_config.cohere_transcribe.decoder = C.CString(config.ModelConfig.CohereTranscribe.Decoder)
+	c.model_config.cohere_transcribe.language = C.CString(config.ModelConfig.CohereTranscribe.Language)
+	c.model_config.cohere_transcribe.use_punct = C.int(config.ModelConfig.CohereTranscribe.UsePunct)
+	c.model_config.cohere_transcribe.use_itn = C.int(config.ModelConfig.CohereTranscribe.UseInverseTextNormalization)
+
 	c.model_config.wenet_ctc.model = C.CString(config.ModelConfig.WenetCtc.Model)
 
 	c.model_config.omnilingual.model = C.CString(config.ModelConfig.Omnilingual.Model)
@@ -713,6 +730,7 @@ func newCOfflineRecognizerConfig(config *OfflineRecognizerConfig) *C.struct_Sher
 	c.model_config.qwen3_asr.temperature = C.float(config.ModelConfig.Qwen3ASR.Temperature)
 	c.model_config.qwen3_asr.top_p = C.float(config.ModelConfig.Qwen3ASR.TopP)
 	c.model_config.qwen3_asr.seed = C.int(config.ModelConfig.Qwen3ASR.Seed)
+	c.model_config.qwen3_asr.hotwords = C.CString(config.ModelConfig.Qwen3ASR.Hotwords)
 
 	c.model_config.tokens = C.CString(config.ModelConfig.Tokens)
 
@@ -784,6 +802,9 @@ func freeCOfflineRecognizerConfig(c *C.struct_SherpaOnnxOfflineRecognizerConfig)
 		&c.model_config.canary.decoder,
 		&c.model_config.canary.src_lang,
 		&c.model_config.canary.tgt_lang,
+		&c.model_config.cohere_transcribe.encoder,
+		&c.model_config.cohere_transcribe.decoder,
+		&c.model_config.cohere_transcribe.language,
 		&c.model_config.wenet_ctc.model,
 		&c.model_config.medasr.model,
 		&c.model_config.fire_red_asr_ctc.model,
@@ -791,6 +812,7 @@ func freeCOfflineRecognizerConfig(c *C.struct_SherpaOnnxOfflineRecognizerConfig)
 		&c.model_config.qwen3_asr.encoder,
 		&c.model_config.qwen3_asr.decoder,
 		&c.model_config.qwen3_asr.tokenizer,
+		&c.model_config.qwen3_asr.hotwords,
 		&c.model_config.omnilingual.model,
 		&c.model_config.tokens,
 		&c.model_config.provider,
@@ -942,6 +964,13 @@ func (s *OfflineStream) GetResult() *OfflineRecognizerResult {
 		durations := unsafe.Slice(p.durations, n)
 		for i := 0; i < n; i++ {
 			result.Durations[i] = float32(durations[i])
+		}
+	}
+	if p.ys_log_probs != nil {
+		result.YsLogProbs = make([]float32, n)
+		ys_log_probs := unsafe.Slice(p.ys_log_probs, n)
+		for i := 0; i < n; i++ {
+			result.YsLogProbs[i] = float32(ys_log_probs[i])
 		}
 	}
 	return result

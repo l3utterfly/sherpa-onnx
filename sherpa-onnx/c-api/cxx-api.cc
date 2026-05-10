@@ -189,6 +189,10 @@ OnlineRecognizerResult OnlineRecognizer::GetResult(
   auto r = SherpaOnnxGetOnlineStreamResult(p_, s->Get());
 
   OnlineRecognizerResult ans;
+  if (!r) {
+    return ans;
+  }
+
   ans.text = r->text;
 
   ans.tokens.resize(r->count);
@@ -310,6 +314,17 @@ static SherpaOnnxOfflineRecognizerConfig Convert(
   c.model_config.canary.tgt_lang = config.model_config.canary.tgt_lang.c_str();
   c.model_config.canary.use_pnc = config.model_config.canary.use_pnc;
 
+  c.model_config.cohere_transcribe.encoder =
+      config.model_config.cohere_transcribe.encoder.c_str();
+  c.model_config.cohere_transcribe.decoder =
+      config.model_config.cohere_transcribe.decoder.c_str();
+  c.model_config.cohere_transcribe.language =
+      config.model_config.cohere_transcribe.language.c_str();
+  c.model_config.cohere_transcribe.use_punct =
+      config.model_config.cohere_transcribe.use_punct;
+  c.model_config.cohere_transcribe.use_itn =
+      config.model_config.cohere_transcribe.use_itn;
+
   c.model_config.wenet_ctc.model = config.model_config.wenet_ctc.model.c_str();
 
   c.model_config.omnilingual.model =
@@ -346,6 +361,8 @@ static SherpaOnnxOfflineRecognizerConfig Convert(
       config.model_config.qwen3_asr.decoder.c_str();
   c.model_config.qwen3_asr.tokenizer =
       config.model_config.qwen3_asr.tokenizer.c_str();
+  c.model_config.qwen3_asr.hotwords =
+      config.model_config.qwen3_asr.hotwords.c_str();
   c.model_config.qwen3_asr.max_total_len =
       config.model_config.qwen3_asr.max_total_len;
   c.model_config.qwen3_asr.max_new_tokens =
@@ -740,6 +757,8 @@ KeywordResult KeywordSpotter::GetResult(const OnlineStream *s) const {
   auto r = SherpaOnnxGetKeywordResult(p_, s->Get());
 
   KeywordResult ans;
+  if (!r) return ans;
+
   ans.keyword = r->keyword;
 
   ans.tokens.resize(r->count);
@@ -881,6 +900,8 @@ void CircularBuffer::Push(const float *samples, int32_t n) const {
 
 std::vector<float> CircularBuffer::Get(int32_t start_index, int32_t n) const {
   const float *samples = SherpaOnnxCircularBufferGet(p_, start_index, n);
+  if (!samples) return {};
+
   std::vector<float> ans(n);
   std::copy(samples, samples + n, ans.begin());
 
@@ -1008,6 +1029,7 @@ std::vector<float> LinearResampler::Resample(const float *input,
                                              int32_t input_dim,
                                              bool flush) const {
   auto out = SherpaOnnxLinearResamplerResample(p_, input, input_dim, flush);
+  if (!out) return {};
 
   std::vector<float> ans{out->samples, out->samples + out->n};
 

@@ -409,6 +409,7 @@ type
     Temperature: Single;
     TopP: Single;
     Seed: Integer;
+    Hotwords: AnsiString;
     class operator Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineQwen3ASRModelConfig);
     function ToString: AnsiString;
   end;
@@ -451,6 +452,16 @@ type
     UsePnc: Boolean;
     function ToString: AnsiString;
     class operator Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineCanaryModelConfig);
+  end;
+
+  TSherpaOnnxOfflineCohereTranscribeModelConfig = record
+    Encoder: AnsiString;
+    Decoder: AnsiString;
+    Language: AnsiString;
+    UsePunct: Boolean;
+    UseItn: Boolean;
+    function ToString: AnsiString;
+    class operator Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineCohereTranscribeModelConfig);
   end;
 
   TSherpaOnnxOfflineMoonshineModelConfig = record
@@ -514,6 +525,7 @@ type
     FunAsrNano: TSherpaOnnxOfflineFunAsrNanoModelConfig;
     FireRedAsrCtc: TSherpaOnnxOfflineFireRedAsrCtcModelConfig;
     Qwen3Asr: TSherpaOnnxOfflineQwen3ASRModelConfig;
+    CohereTranscribe: TSherpaOnnxOfflineCohereTranscribeModelConfig;
     class operator Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineModelConfig);
     function ToString: AnsiString;
   end;
@@ -548,6 +560,7 @@ type
     constructor Create(P: Pointer);
     destructor Destroy; override;
     procedure AcceptWaveform(const Samples: array of Single; SampleRate: Integer);
+    procedure SetOption(const Key: AnsiString; const Value: AnsiString);
     property GetHandle: Pointer Read Handle;
   end;
 
@@ -988,6 +1001,7 @@ type
     Temperature: cfloat;
     TopP: cfloat;
     Seed: cint32;
+    Hotwords: PAnsiChar;
   end;
   SherpaOnnxOfflineWhisperModelConfig = record
     Encoder: PAnsiChar;
@@ -1004,6 +1018,13 @@ type
     SrcLang: PAnsiChar;
     TgtLang: PAnsiChar;
     UsePnc: cint32;
+  end;
+  SherpaOnnxOfflineCohereTranscribeModelConfig = record
+    Encoder: PAnsiChar;
+    Decoder: PAnsiChar;
+    Language: PAnsiChar;
+    UsePunct: cint32;
+    UseItn: cint32;
   end;
   SherpaOnnxOfflineFireRedAsrModelConfig = record
     Encoder: PAnsiChar;
@@ -1054,6 +1075,7 @@ type
     FunAsrNano: SherpaOnnxOfflineFunAsrNanoModelConfig;
     FireRedAsrCtc: SherpaOnnxOfflineFireRedAsrCtcModelConfig;
     Qwen3Asr: SherpaOnnxOfflineQwen3ASRModelConfig;
+    CohereTranscribe: SherpaOnnxOfflineCohereTranscribeModelConfig;
   end;
 
   SherpaOnnxOfflineRecognizerConfig = record
@@ -1575,6 +1597,10 @@ procedure SherpaOnnxAcceptWaveformOffline(Stream: Pointer;
   SampleRate: cint32; Samples: pcfloat; N: cint32); cdecl;
   external SherpaOnnxLibName;
 
+procedure SherpaOnnxOfflineStreamSetOption(Stream: Pointer; Key: PAnsiChar;
+  Value: PAnsiChar); cdecl;
+  external SherpaOnnxLibName;
+
 procedure SherpaOnnxDecodeOfflineStream(Recognizer: Pointer; Stream: Pointer); cdecl;
   external SherpaOnnxLibName;
 
@@ -1981,10 +2007,11 @@ begin
     ', Temperature := %.3f' +
     ', TopP := %.3f' +
     ', Seed := %d' +
+    ', Hotwords := %s' +
     ')',
     [Self.ConvFrontend, Self.Encoder, Self.Decoder, Self.Tokenizer,
      Self.MaxTotalLen, Self.MaxNewTokens, Self.Temperature,
-     Self.TopP, Self.Seed]);
+     Self.TopP, Self.Seed, Self.Hotwords]);
 end;
 
 function TSherpaOnnxOfflineFunAsrNanoModelConfig.ToString: AnsiString;
@@ -2036,6 +2063,19 @@ begin
     ')',
     [Self.Encoder, Self.Decoder, Self.SrcLang,
      Self.TgtLang, Self.UsePnc.ToString]);
+end;
+
+function TSherpaOnnxOfflineCohereTranscribeModelConfig.ToString: AnsiString;
+begin
+  Result := Format('TSherpaOnnxOfflineCohereTranscribeModelConfig(' +
+    'Encoder := %s, ' +
+    'Decoder := %s, ' +
+    'Language := %s, ' +
+    'UsePunct := %s, ' +
+    'UseItn := %s' +
+    ')',
+    [Self.Encoder, Self.Decoder, Self.Language, Self.UsePunct.ToString,
+     Self.UseItn.ToString]);
 end;
 
 function TSherpaOnnxOfflineFireRedAsrModelConfig.ToString: AnsiString;
@@ -2106,12 +2146,13 @@ begin
     'ZipformerCtc := %s, ' +
     'Canary := %s, ' +
     'WenetCtc := %s, ' +
-    'Omnilingual := %s' +
-    ', MedAsr := %s' +
-    ', FunAsrNano := %s' +
-    ', FireRedAsrCtc := %s' +
-    ', Qwen3Asr := %s' +
-    ')',
+     'Omnilingual := %s' +
+     ', MedAsr := %s' +
+     ', FunAsrNano := %s' +
+     ', FireRedAsrCtc := %s' +
+     ', Qwen3Asr := %s' +
+     ', CohereTranscribe := %s' +
+     ')',
     [Self.Transducer.ToString, Self.Paraformer.ToString,
      Self.NeMoCtc.ToString, Self.Whisper.ToString, Self.Tdnn.ToString,
      Self.Tokens, Self.NumThreads, Self.Debug.ToString, Self.Provider,
@@ -2121,8 +2162,8 @@ begin
      Self.ZipformerCtc.ToString, Self.Canary.ToString, Self.WenetCtc.ToString,
      Self.Omnilingual.ToString, Self.MedAsr.ToString,
      Self.FunAsrNano.ToString, Self.FireRedAsrCtc.ToString,
-     Self.Qwen3Asr.ToString
-     ]);
+     Self.Qwen3Asr.ToString, Self.CohereTranscribe.ToString
+      ]);
 end;
 
 function TSherpaOnnxOfflineRecognizerConfig.ToString: AnsiString;
@@ -2232,6 +2273,13 @@ begin
   C.ModelConfig.Qwen3Asr.Temperature := Config.ModelConfig.Qwen3Asr.Temperature;
   C.ModelConfig.Qwen3Asr.TopP := Config.ModelConfig.Qwen3Asr.TopP;
   C.ModelConfig.Qwen3Asr.Seed := Config.ModelConfig.Qwen3Asr.Seed;
+  C.ModelConfig.Qwen3Asr.Hotwords := PAnsiChar(Config.ModelConfig.Qwen3Asr.Hotwords);
+
+  C.ModelConfig.CohereTranscribe.Encoder := PAnsiChar(Config.ModelConfig.CohereTranscribe.Encoder);
+  C.ModelConfig.CohereTranscribe.Decoder := PAnsiChar(Config.ModelConfig.CohereTranscribe.Decoder);
+  C.ModelConfig.CohereTranscribe.Language := PAnsiChar(Config.ModelConfig.CohereTranscribe.Language);
+  C.ModelConfig.CohereTranscribe.UsePunct := Ord(Config.ModelConfig.CohereTranscribe.UsePunct);
+  C.ModelConfig.CohereTranscribe.UseItn := Ord(Config.ModelConfig.CohereTranscribe.UseItn);
 
   C.LMConfig.Model := PAnsiChar(Config.LMConfig.Model);
   C.LMConfig.Scale := Config.LMConfig.Scale;
@@ -2338,6 +2386,13 @@ procedure TSherpaOnnxOfflineStream.AcceptWaveform(const Samples: array of Single
 begin
   SherpaOnnxAcceptWaveformOffline(Self.Handle, SampleRate, pcfloat(Samples),
     Length(Samples));
+end;
+
+procedure TSherpaOnnxOfflineStream.SetOption(const Key: AnsiString;
+  const Value: AnsiString);
+begin
+  SherpaOnnxOfflineStreamSetOption(Self.Handle, PAnsiChar(Key),
+    PAnsiChar(Value));
 end;
 
 function TSherpaOnnxOfflineRecognizerResult.ToString: AnsiString;
@@ -2504,6 +2559,13 @@ begin
   Dest.SrcLang := 'en';
   Dest.TgtLang := 'en';
   Dest.UsePnc := True;
+end;
+
+class operator TSherpaOnnxOfflineCohereTranscribeModelConfig.Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineCohereTranscribeModelConfig);
+begin
+  Dest.Language := '';
+  Dest.UsePunct := True;
+  Dest.UseItn := True;
 end;
 
 class operator TSherpaOnnxOfflineLMConfig.Initialize({$IFDEF FPC}var{$ELSE}out{$ENDIF} Dest: TSherpaOnnxOfflineLMConfig);

@@ -5,8 +5,8 @@
 #include "sherpa-onnx/csrc/online-recognizer-impl.h"
 
 #include <memory>
-#include <string>
 #include <sstream>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -21,12 +21,15 @@
 
 #include "fst/extensions/far/far.h"
 #include "kaldifst/csrc/kaldi-fst-io.h"
+#include "sherpa-onnx/csrc/fst-utils.h"
 #include "sherpa-onnx/csrc/macros.h"
 #include "sherpa-onnx/csrc/online-recognizer-ctc-impl.h"
 #include "sherpa-onnx/csrc/online-recognizer-paraformer-impl.h"
 #include "sherpa-onnx/csrc/online-recognizer-transducer-impl.h"
 #include "sherpa-onnx/csrc/online-recognizer-transducer-nemo-impl.h"
+#include "sherpa-onnx/csrc/online-recognizer-transducer-nemo-parakeet-unified-impl.h"
 #include "sherpa-onnx/csrc/onnx-utils.h"
+#include "sherpa-onnx/csrc/session.h"
 #include "sherpa-onnx/csrc/text-utils.h"
 
 #if SHERPA_ONNX_ENABLE_RKNN
@@ -35,6 +38,14 @@
 #endif
 
 namespace sherpa_onnx {
+
+static bool IsNeMoParakeetUnifiedStreaming(const Ort::Session &decoder_sess) {
+  Ort::AllocatorWithDefaultOptions allocator;
+  Ort::ModelMetadata meta_data = decoder_sess.GetModelMetadata();
+  return LookupCustomModelMetaData(meta_data, "streaming_model_type",
+                                   allocator) ==
+         "nemo_parakeet_unified_streaming";
+}
 
 std::unique_ptr<OnlineRecognizerImpl> OnlineRecognizerImpl::Create(
     const OnlineRecognizerConfig &config) {
@@ -66,9 +77,14 @@ std::unique_ptr<OnlineRecognizerImpl> OnlineRecognizerImpl::Create(
     sess_opts.SetIntraOpNumThreads(1);
     sess_opts.SetInterOpNumThreads(1);
 
-    auto decoder_model = ReadFile(config.model_config.transducer.decoder);
-    auto sess = std::make_unique<Ort::Session>(env, decoder_model.data(),
-                                               decoder_model.size(), sess_opts);
+    auto sess = std::make_unique<Ort::Session>(
+        env, SHERPA_ONNX_TO_ORT_PATH(config.model_config.transducer.decoder),
+        sess_opts);
+
+    if (IsNeMoParakeetUnifiedStreaming(*sess)) {
+      return std::make_unique<
+          OnlineRecognizerTransducerNeMoParakeetUnifiedImpl>(config);
+    }
 
     size_t node_count = sess->GetOutputCount();
 
@@ -130,6 +146,11 @@ std::unique_ptr<OnlineRecognizerImpl> OnlineRecognizerImpl::Create(
     auto decoder_model = ReadFile(mgr, config.model_config.transducer.decoder);
     auto sess = std::make_unique<Ort::Session>(env, decoder_model.data(),
                                                decoder_model.size(), sess_opts);
+
+    if (IsNeMoParakeetUnifiedStreaming(*sess)) {
+      return std::make_unique<
+          OnlineRecognizerTransducerNeMoParakeetUnifiedImpl>(mgr, config);
+    }
 
     size_t node_count = sess->GetOutputCount();
 
@@ -236,19 +257,11 @@ OnlineRecognizerImpl::OnlineRecognizerImpl(Manager *mgr,
 
       auto buf = ReadFile(mgr, f);
 
-      std::unique_ptr<std::istream> s(
-          new std::istringstream(std::string(buf.data(), buf.size())));
-
-      std::unique_ptr<fst::FarReader<fst::StdArc>> reader(
-          fst::FarReader<fst::StdArc>::Open(std::move(s)));
-
-      for (; !reader->Done(); reader->Next()) {
-        std::unique_ptr<fst::StdConstFst> r(
-            fst::CastOrConvertToConstFst(reader->GetFst()->Copy()));
-
+      auto fsts = ReadFstsFromFar(buf);
+      for (auto &r : fsts) {
         itn_list_.push_back(
             std::make_unique<kaldifst::TextNormalizer>(std::move(r)));
-      }  // for (; !reader->Done(); reader->Next())
+      }
     }  // for (const auto &f : files)
   }  // if (!config.rule_fars.empty())
   if (!config.hr.lexicon.empty() && !config.hr.rule_fsts.empty()) {
