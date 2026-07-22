@@ -1,3 +1,9 @@
+<div align="center">
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/k2-fsa/sherpa-onnx)
+
+</div>
+
  ### Supported functions
 
 |Speech recognition| [Speech synthesis][tts-url] | [Source separation][ss-url] |
@@ -300,6 +306,15 @@ for 新一代 Kaldi **微信交流群** and **QQ 交流群**.
 
 ## Projects using sherpa-onnx
 
+### [Sherpa Voice / @siteed/sherpa-onnx.rn](https://github.com/deeeed/audiolab)
+
+> React Native wrapper and demo app for validating sherpa-onnx on iOS,
+> Android, and Web, including ASR, TTS, VAD, KWS, speaker ID, diarization,
+> language ID, punctuation, audio tagging, and speech enhancement.
+
+- [NPM package](https://www.npmjs.com/package/@siteed/sherpa-onnx.rn)
+- [Live demo](https://deeeed.github.io/audiolab/sherpa-voice/)
+
 ### [Speed of Sound](https://github.com/zugaldia/speedofsound)
 
 > A voice-typing application for the Linux desktop (GTK4/Adwaita).
@@ -313,7 +328,7 @@ for 新一代 Kaldi **微信交流群** and **QQ 交流群**.
 > It supports Kokoro-82M, Piper, and VITS engines with multilingual support including
 > Hindi, English, British English, Japanese, Chinese and 50+ more languages.
 
-- [Download APK v1.0-beta](https://huggingface.co/CodeBySonu95/Sherpa-onnx-models/resolve/main/VoxSherpa-TTS_test.apk)
+- [Download APK (All Versions)](https://github.com/CodeBySonu95/VoxSherpa-TTS/releases)
 - Android 11+ · 100% offline · No telemetry
 
 <div align="center">
@@ -474,6 +489,26 @@ cross-platform Node.js microphone streaming library with prebuilt native binarie
 - [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=analytics-in-motion.wake-word)
 - [Open VSX](https://open-vsx.org/extension/analytics-in-motion/wake-word)
 - [decibri integration guides for sherpa-onnx](https://decibri.dev/docs/node/integrations/sherpa-onnx-stt.html)
+
+### [SmartSub](https://github.com/buxuku/SmartSub)
+
+> SmartSub is a local-first cross-platform desktop application for the complete subtitle production pipeline: audio/video transcription, subtitle translation, proofreading, and subtitle burning/muxing.
+>
+> It natively integrates sherpa-onnx to power three offline ASR engines — FunASR, Qwen3-ASR, and FireRedASR — delivering high-accuracy Chinese and multilingual speech recognition entirely on-device, with no file uploads required.
+
+### [Fono](https://github.com/bogdanr/fono)
+
+> Talk to your computer. Fono is an open-source (GPL-3.0), complete voice-AI
+> stack (speech-to-text, text-to-speech, a local LLM, wake word, speaker ID) in
+> one small binary for the Linux, macOS, and Windows desktop. Press a key and
+> speak: it types into any app, answers as a voice assistant, or drives a coding
+> agent.
+
+It uses sherpa-onnx's Supertonic TTS models for text-to-speech, with the
+Supertonic text frontend ported to Rust. See also
+[#3750](https://github.com/k2-fsa/sherpa-onnx/pull/3750), which fixes dropped
+diacritics in the Supertonic frontend for Romanian, Czech, Polish, Hungarian,
+Turkish, Vietnamese, and other non-English Latin-script languages.
 
 [silero-vad]: https://github.com/snakers4/silero-vad
 [Raspberry Pi]: https://www.raspberrypi.com/

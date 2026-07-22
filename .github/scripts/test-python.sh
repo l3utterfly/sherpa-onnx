@@ -35,13 +35,13 @@ rm -rf sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25
 
 log "test Supertonic TTS"
 
-curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-supertonic-tts-int8-2026-03-06.tar.bz2
-tar xvf sherpa-onnx-supertonic-tts-int8-2026-03-06.tar.bz2
-rm sherpa-onnx-supertonic-tts-int8-2026-03-06.tar.bz2
+curl -SL -O https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-supertonic-3-tts-int8-2026-05-11.tar.bz2
+tar xvf sherpa-onnx-supertonic-3-tts-int8-2026-05-11.tar.bz2
+rm sherpa-onnx-supertonic-3-tts-int8-2026-05-11.tar.bz2
 
 python3 python-api-examples/supertonic-tts.py
 
-rm -rf sherpa-onnx-supertonic-tts-int8-2026-03-06
+rm -rf sherpa-onnx-supertonic-3-tts-int8-2026-05-11
 
 mkdir -p tts
 cp supertonic-en.wav tts/
@@ -249,7 +249,7 @@ rm -rf /tmp/test-cluster
 export GIT_CLONE_PROTECTION_ACTIVE=false
 
 log "test offline SenseVoice CTC"
-url=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
+url=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2024-07-17.tar.bz2
 name=$(basename $url)
 repo=$(basename -s .tar.bz2 $name)
 
@@ -279,7 +279,7 @@ if [[ $(uname) == Linux ]]; then
 
   python3 ./python-api-examples/generate-subtitles.py \
     --silero-vad-model=./silero_vad.onnx \
-    --sense-voice=$repo/model.onnx \
+    --sense-voice=$repo/model.int8.onnx \
     --tokens=$repo/tokens.txt \
     --num-threads=2 \
     ./lei-jun-test.wav
@@ -293,7 +293,7 @@ if [[ $(uname) == Linux ]]; then
 
   python3 ./python-api-examples/generate-subtitles.py \
     --silero-vad-model=./silero_vad.onnx \
-    --sense-voice=$repo/model.onnx \
+    --sense-voice=$repo/model.int8.onnx \
     --tokens=$repo/tokens.txt \
     --num-threads=2 \
     ./Obama.wav
@@ -340,6 +340,16 @@ ls -lh $repo
 python3 ./python-api-examples/add-punctuation.py
 
 rm -rf $repo
+
+log "test offline diacritization"
+
+curl -SL -O https://github.com/abjadai/catt/releases/download/v2/eo_model_onnx.zip
+unzip eo_model_onnx.zip -d catt_eo_model_onnx
+rm eo_model_onnx.zip
+
+python3 ./python-api-examples/add-diacritics.py
+
+rm -rf catt_eo_model_onnx
 
 log "test online punctuation"
 

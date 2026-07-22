@@ -3,6 +3,7 @@
 // Copyright (c)  2025  Xiaomi Corporation
 
 #include "sherpa-onnx/csrc/offline-fire-red-asr-model.h"
+#include "sherpa-onnx/csrc/ort-env.h"
 
 #include <algorithm>
 #include <cmath>
@@ -42,7 +43,7 @@ class OfflineFireRedAsrModel::Impl {
  public:
   explicit Impl(const OfflineModelConfig &config)
       : config_(config),
-        env_(ORT_LOGGING_LEVEL_ERROR),
+        env_(CreateOrtEnv()),
         sess_opts_(GetSessionOptions(config)),
         allocator_{},
         cpu_mem_info_(
@@ -64,7 +65,7 @@ class OfflineFireRedAsrModel::Impl {
   template <typename Manager>
   Impl(Manager *mgr, const OfflineModelConfig &config)
       : config_(config),
-        env_(ORT_LOGGING_LEVEL_ERROR),
+        env_(CreateOrtEnv()),
         sess_opts_(GetSessionOptions(config)),
         allocator_{},
         cpu_mem_info_(
@@ -157,10 +158,14 @@ class OfflineFireRedAsrModel::Impl {
         std::move(decoder_input[4]), std::move(decoder_input[5])};
   }
 
-  std::pair<Ort::Value, Ort::Value> GetInitialSelfKVCache() {
+  std::pair<Ort::Value, Ort::Value> GetInitialSelfKVCache(int32_t alloc_len) {
+    if (alloc_len <= 0 || alloc_len > meta_data_.max_len) {
+      alloc_len = meta_data_.max_len;
+    }
+
     int32_t batch_size = 1;
     std::array<int64_t, 5> shape{meta_data_.num_decoder_layers, batch_size,
-                                 meta_data_.max_len, meta_data_.num_head,
+                                 alloc_len, meta_data_.num_head,
                                  meta_data_.head_dim};
 
     Ort::Value n_layer_self_k_cache = Ort::Value::CreateTensor<float>(
@@ -319,8 +324,8 @@ OfflineFireRedAsrModel::ForwardDecoder(Ort::Value tokens,
 }
 
 std::pair<Ort::Value, Ort::Value>
-OfflineFireRedAsrModel::GetInitialSelfKVCache() const {
-  return impl_->GetInitialSelfKVCache();
+OfflineFireRedAsrModel::GetInitialSelfKVCache(int32_t alloc_len) const {
+  return impl_->GetInitialSelfKVCache(alloc_len);
 }
 
 OrtAllocator *OfflineFireRedAsrModel::Allocator() const {

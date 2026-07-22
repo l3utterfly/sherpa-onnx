@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "sherpa-onnx/csrc/ort-env.h"
+
 #if __ANDROID_API__ >= 9
 #include "android/asset_manager.h"
 #include "android/asset_manager_jni.h"
@@ -31,7 +33,7 @@ class OfflineNemoEncDecCtcModel::Impl {
  public:
   explicit Impl(const OfflineModelConfig &config)
       : config_(config),
-        env_(ORT_LOGGING_LEVEL_ERROR),
+        env_(CreateOrtEnv()),
         sess_opts_(GetSessionOptions(config)),
         allocator_{} {
     sess_ = std::make_unique<Ort::Session>(
@@ -42,7 +44,7 @@ class OfflineNemoEncDecCtcModel::Impl {
   template <typename Manager>
   Impl(Manager *mgr, const OfflineModelConfig &config)
       : config_(config),
-        env_(ORT_LOGGING_LEVEL_ERROR),
+        env_(CreateOrtEnv()),
         sess_opts_(GetSessionOptions(config)),
         allocator_{} {
     auto buf = ReadFile(mgr, config_.nemo_ctc.model);
@@ -92,8 +94,8 @@ class OfflineNemoEncDecCtcModel::Impl {
  private:
   void Init(void *model_data, size_t model_data_length) {
     if (model_data) {
-      sess_ = std::make_unique<Ort::Session>(
-          env_, model_data, model_data_length, sess_opts_);
+      sess_ = std::make_unique<Ort::Session>(env_, model_data,
+                                             model_data_length, sess_opts_);
     } else if (!sess_) {
       SHERPA_ONNX_LOGE(
           "Please pass model data or initialize the session outside of "
@@ -123,6 +125,10 @@ class OfflineNemoEncDecCtcModel::Impl {
     SHERPA_ONNX_READ_META_DATA_STR_ALLOW_EMPTY(normalize_type_,
                                                "normalize_type");
     SHERPA_ONNX_READ_META_DATA_WITH_DEFAULT(is_giga_am_, "is_giga_am", 0);
+
+    if (normalize_type_ == "NA") {
+      normalize_type_ = "";
+    }
   }
 
  private:
