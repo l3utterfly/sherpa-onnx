@@ -56,12 +56,22 @@ class OnlineStream {
 
   /** Get n frames starting from the given frame index.
    *
-   * @param frame_index  The starting frame index
+   * @param frame_index  The starting frame index, relative to the last Reset().
+   *                     It may be negative to read retained left context; the
+   *                     caller must not request frames already discarded by
+   *                     an earlier GetFrames() call.
    * @param n  Number of frames to get.
    * @return Return a 2-D tensor of shape (n, feature_dim).
    *         which is flattened into a 1-D vector (flattened in row major)
    */
   std::vector<float> GetFrames(int32_t frame_index, int32_t n) const;
+
+  // Internal buffered NeMo feature extraction; indices are segment-relative.
+  std::vector<float> GetBufferedFeatures(int32_t frame_index, int32_t n,
+                                         bool is_final,
+                                         int32_t *start_sample_offset) const;
+
+  int32_t NumTrailingSamples() const;
 
   void Reset();
 
@@ -100,7 +110,10 @@ class OnlineStream {
   OnlineTransducerDecoderResultNoOrt &GetQnnResult();
 
   void SetNeMoDecoderStates(std::vector<Ort::Value> decoder_states);
+  void SetNeMoDecoderOut(Ort::Value decoder_out);
+
   std::vector<Ort::Value> &GetNeMoDecoderStates();
+  Ort::Value &GetNeMoDecoderOut();
 
   /**
    * Get the context graph corresponding to this stream.
@@ -126,8 +139,7 @@ class OnlineStream {
   // Returns the value for the given key, or an empty string if the key
   // does not exist. No exception is thrown for missing keys.
   const std::string &GetOption(const std::string &key) const;
-  int32_t GetOptionInt(const std::string &key,
-                       int32_t default_value = 0) const;
+  int32_t GetOptionInt(const std::string &key, int32_t default_value = 0) const;
   float GetOptionFloat(const std::string &key,
                        float default_value = 0.0f) const;
 

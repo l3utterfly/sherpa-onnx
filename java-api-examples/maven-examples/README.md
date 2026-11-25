@@ -27,7 +27,7 @@ This is the easiest way — one dependency pulls in everything:
 <dependency>
     <groupId>com.github.k2-fsa</groupId>
     <artifactId>sherpa-onnx</artifactId>
-    <version>refactor-jar-SNAPSHOT</version>
+    <version>v2.0.3</version>
 </dependency>
 ```
 
@@ -48,14 +48,14 @@ so you only ship the platform you need, keeping the final jar lightweight:
 <dependency>
     <groupId>com.github.k2-fsa.sherpa-onnx</groupId>
     <artifactId>sherpa-onnx-jvm</artifactId>
-    <version>refactor-jar-SNAPSHOT</version>
+    <version>v2.0.3</version>
 </dependency>
 
 <!-- 2. Platform native lib — pick ONE for your target platform -->
 <dependency>
     <groupId>com.github.k2-fsa.sherpa-onnx</groupId>
     <artifactId>sherpa-onnx-native-lib-osx-aarch64</artifactId>
-    <version>refactor-jar-SNAPSHOT</version>
+    <version>v2.0.3</version>
 </dependency>
 ```
 
@@ -68,6 +68,7 @@ Available native lib artifacts for each platform:
 | Linux x64 | `sherpa-onnx-native-lib-linux-x64` |
 | Linux ARM64 | `sherpa-onnx-native-lib-linux-aarch64` |
 | Windows x64 | `sherpa-onnx-native-lib-win-x64` |
+| Windows ARM64 | `sherpa-onnx-native-lib-win-arm64` |
 
 > **Note:** The `pom.xml` in this directory uses Approach 2 by default. Approach 1 is
 > included as a comment for reference.
@@ -82,7 +83,7 @@ mvn package -q
 ## Run
 
 ```bash
-java -jar target/sherpa-onnx-maven-example-1.0-SNAPSHOT.jar
+java -jar target/sherpa-onnx-maven-example-2.0.3.jar
 ```
 
 Expected output:
@@ -130,19 +131,21 @@ sherpa-onnx/native/linux-aarch64/libonnxruntime.so       34 MB   (Linux ARM64)
 sherpa-onnx/native/linux-aarch64/libsherpa-onnx-jni.so   4.7 MB
 sherpa-onnx/native/linux-x64/libonnxruntime.so           26 MB   (Linux x64)
 sherpa-onnx/native/linux-x64/libsherpa-onnx-jni.so       5.1 MB
-sherpa-onnx/native/osx-aarch64/libonnxruntime.1.27.0.dylib  28 MB   (macOS ARM64)
+sherpa-onnx/native/osx-aarch64/libonnxruntime.dylib  28 MB   (macOS ARM64)
 sherpa-onnx/native/osx-aarch64/libsherpa-onnx-jni.dylib     4.2 MB
-sherpa-onnx/native/osx-x64/libonnxruntime.1.27.0.dylib      32 MB   (macOS x64)
+sherpa-onnx/native/osx-x64/libonnxruntime.dylib      32 MB   (macOS x64)
 sherpa-onnx/native/osx-x64/libsherpa-onnx-jni.dylib         4.4 MB
 sherpa-onnx/native/win-x64/onnxruntime.dll             17 MB   (Windows x64)
 sherpa-onnx/native/win-x64/sherpa-onnx-jni.dll         4.6 MB
+sherpa-onnx/native/win-arm64/onnxruntime.dll           17 MB   (Windows ARM64)
+sherpa-onnx/native/win-arm64/sherpa-onnx-jni.dll       4.6 MB
 ```
 
 **Approach 2** (`sherpa-onnx-jvm` + `sherpa-onnx-native-lib-osx-aarch64`) only includes
 the macOS ARM64 native libs:
 
 ```
-sherpa-onnx/native/osx-aarch64/libonnxruntime.1.27.0.dylib  28 MB   (macOS ARM64)
+sherpa-onnx/native/osx-aarch64/libonnxruntime.dylib  28 MB   (macOS ARM64)
 sherpa-onnx/native/osx-aarch64/libsherpa-onnx-jni.dylib     4.2 MB
 ```
 
@@ -160,8 +163,8 @@ your target platform. This matters for:
 ```bash
 # Build and check the jar
 mvn package -q
-ls -lh target/sherpa-onnx-maven-example-1.0-SNAPSHOT.jar
+ls -lh target/sherpa-onnx-maven-example-2.0.3.jar
 
 # List native libs in the jar
-unzip -l target/sherpa-onnx-maven-example-1.0-SNAPSHOT.jar | grep -E "\.so$|\.dylib$|\.dll$"
+unzip -l target/sherpa-onnx-maven-example-2.0.3.jar | grep -E "\.so$|\.dylib$|\.dll$"
 ```

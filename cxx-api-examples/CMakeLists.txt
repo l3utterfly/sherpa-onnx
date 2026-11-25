@@ -1,5 +1,8 @@
 include_directories(${PROJECT_SOURCE_DIR})
 
+add_executable(version-cxx-api ./version-cxx-api.cc)
+target_link_libraries(version-cxx-api sherpa-onnx-cxx-api)
+
 add_executable(streaming-zipformer-cxx-api ./streaming-zipformer-cxx-api.cc)
 target_link_libraries(streaming-zipformer-cxx-api sherpa-onnx-cxx-api)
 
@@ -8,6 +11,9 @@ target_link_libraries(streaming-nemotron-cxx-api sherpa-onnx-cxx-api)
 
 add_executable(streaming-zipformer-with-hr-cxx-api ./streaming-zipformer-with-hr-cxx-api.cc)
 target_link_libraries(streaming-zipformer-with-hr-cxx-api sherpa-onnx-cxx-api)
+
+add_executable(zipformer-ctc-hlg-cxx-api ./zipformer-ctc-hlg-cxx-api.cc)
+target_link_libraries(zipformer-ctc-hlg-cxx-api sherpa-onnx-cxx-api)
 
 add_executable(speech-enhancement-gtcrn-cxx-api ./speech-enhancement-gtcrn-cxx-api.cc)
 target_link_libraries(speech-enhancement-gtcrn-cxx-api sherpa-onnx-cxx-api)
@@ -29,6 +35,25 @@ target_link_libraries(online-speech-enhancement-gtcrn-cxx-api
 add_executable(online-speech-enhancement-dpdfnet-cxx-api
                ./online-speech-enhancement-dpdfnet-cxx-api.cc)
 target_link_libraries(online-speech-enhancement-dpdfnet-cxx-api
+                      sherpa-onnx-cxx-api)
+
+add_executable(speech-enhancement-voxlock-cxx-api
+               ./speech-enhancement-voxlock-cxx-api.cc)
+target_link_libraries(speech-enhancement-voxlock-cxx-api sherpa-onnx-cxx-api)
+
+add_executable(speech-enhancement-voxlock-with-voice-sample-cxx-api
+               ./speech-enhancement-voxlock-with-voice-sample-cxx-api.cc)
+target_link_libraries(speech-enhancement-voxlock-with-voice-sample-cxx-api
+                      sherpa-onnx-cxx-api)
+
+add_executable(online-speech-enhancement-voxlock-cxx-api
+               ./online-speech-enhancement-voxlock-cxx-api.cc)
+target_link_libraries(online-speech-enhancement-voxlock-cxx-api
+                      sherpa-onnx-cxx-api)
+
+add_executable(online-speech-enhancement-voxlock-with-voice-sample-cxx-api
+               ./online-speech-enhancement-voxlock-with-voice-sample-cxx-api.cc)
+target_link_libraries(online-speech-enhancement-voxlock-with-voice-sample-cxx-api
                       sherpa-onnx-cxx-api)
 
 add_executable(kws-cxx-api ./kws-cxx-api.cc)
@@ -256,3 +281,9 @@ if(SHERPA_ONNX_ENABLE_TTS)
   add_executable(offline-tts-piper-cxx-api ./offline-tts-piper-cxx-api.cc)
   target_link_libraries(offline-tts-piper-cxx-api sherpa-onnx-cxx-api)
 endif()
+
+add_executable(forced-alignment-en-cxx-api ./forced-alignment-en-cxx-api.cc)
+target_link_libraries(forced-alignment-en-cxx-api sherpa-onnx-cxx-api)
+
+add_executable(forced-alignment-zh-cxx-api ./forced-alignment-zh-cxx-api.cc)
+target_link_libraries(forced-alignment-zh-cxx-api sherpa-onnx-cxx-api)
