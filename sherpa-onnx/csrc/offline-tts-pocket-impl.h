@@ -33,6 +33,7 @@
 #include "sherpa-onnx/csrc/normal-data-generator.h"
 #include "sherpa-onnx/csrc/offline-tts-impl.h"
 #include "sherpa-onnx/csrc/offline-tts-pocket-model.h"
+#include "sherpa-onnx/csrc/pocket-tts-bundle.h"
 #include "sherpa-onnx/csrc/resample.h"
 #include "sherpa-onnx/csrc/sentence-piece-tokenizer.h"
 #include "sherpa-onnx/csrc/text-utils.h"
@@ -208,6 +209,7 @@ class OfflineTtsPocketImpl : public OfflineTtsImpl {
       }
     }
 
+    text = bundle_.Normalize(text);
     auto sentences = SplitByPunctuation(text);
 
     if (sentences.empty()) {
@@ -236,10 +238,10 @@ class OfflineTtsPocketImpl : public OfflineTtsImpl {
     std::vector<std::string> prepared;
     prepared.reserve(sentences.size());
     for (const auto &s : sentences) {
-      std::string p = PreparePocketTtsText(s);
-      if (!p.empty()) {
-        prepared.push_back(std::move(p));
-      }
+      auto chunks = bundle_.Split(s, [this](const std::string &p) {
+        return tokenizer_->EncodeIds(p).size();
+      });
+      prepared.insert(prepared.end(), chunks.begin(), chunks.end());
     }
     sentences = std::move(prepared);
 
@@ -348,7 +350,14 @@ class OfflineTtsPocketImpl : public OfflineTtsImpl {
 
     int32_t num_steps = gen_config.num_steps;
     int32_t max_frames = gen_config.GetExtraInt("max_frames", 500);
-    int32_t frames_after_eos = gen_config.GetExtraInt("frames_after_eos", 3);
+    int32_t frames_after_eos = gen_config.GetExtraInt(
+        "frames_after_eos", bundle_.FramesAfterEos(text));
+    if (config_.model.debug) {
+      SHERPA_ONNX_LOGE("Pocket chunk: tokens=%d max_tokens=%d frames_after_eos=%d",
+                       static_cast<int32_t>(tokenizer_->EncodeIds(text).size()),
+                       bundle_.present ? bundle_.max_tokens : 0,
+                       frames_after_eos);
+    }
     float temperature = gen_config.GetExtraFloat("temperature", 0.7f);
     float stddev = std::sqrt(temperature);
     int32_t seed = gen_config.GetExtraInt("seed", -1);
@@ -386,7 +395,7 @@ class OfflineTtsPocketImpl : public OfflineTtsImpl {
         eos_step = step;
       }
 
-      if (eos_step > 0 && (step >= eos_step + frames_after_eos)) {
+      if (eos_step >= 0 && (step >= eos_step + frames_after_eos)) {
         break;
       }
 
@@ -463,17 +472,37 @@ class OfflineTtsPocketImpl : public OfflineTtsImpl {
   }
 
  private:
+  std::string BundlePath() const {
+    const auto &path = config_.model.pocket.vocab_json;
+    auto slash = path.find_last_of("/\\");
+    return (slash == std::string::npos ? "" : path.substr(0, slash + 1)) +
+           "bundle.json";
+  }
+
+  void SetBundle(const std::vector<char> &bytes) {
+    bundle_ = PocketTtsBundle::Parse(bytes);
+    if (config_.model.debug) {
+      SHERPA_ONNX_LOGE("Pocket bundle: max_tokens=%d recommended_frames=%d remove_semicolons=%d",
+                       bundle_.max_tokens, bundle_.recommended_frames,
+                       static_cast<int32_t>(bundle_.remove_semicolons));
+    }
+  }
+
+  PocketTtsBundle bundle_;
+
   template <typename Manager>
   void InitTokenizer(Manager *mgr) {
     tokenizer_ = std::make_unique<SentencePieceTokenizer>(
         mgr, config_.model.pocket.vocab_json,
         config_.model.pocket.token_scores_json);
+    if (FileExists(mgr, BundlePath())) SetBundle(ReadFile(mgr, BundlePath()));
   }
 
   void InitTokenizer() {
     tokenizer_ = std::make_unique<SentencePieceTokenizer>(
         config_.model.pocket.vocab_json,
         config_.model.pocket.token_scores_json);
+    if (FileExists(BundlePath())) SetBundle(ReadFile(BundlePath()));
   }
 
   Ort::Value GetVoiceEmbedding(const GenerationConfig &gen_config) const {
